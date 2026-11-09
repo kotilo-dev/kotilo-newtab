@@ -56,5 +56,7 @@ No. All code is in the package; only data (JSON, XML) is fetched.
 - Website content: user-chosen RSS feeds are fetched and shown.
 - The developer does not collect or transfer user data; no data is sold or used for advertising or credit decisions.
 
-## Screenshots needed
-1280×800 or 640×400 PNG/JPEG, at least one (up to five): (1) start page with sidebar and cards, (2) settings panel, (3) markets card tabs, (4) calendar, (5) dark theme.
+## Screenshots
+`store/screenshots/` holds five 1280×800 24-bit PNGs (no alpha), made with sample data: (1) start page, (2) bookmark folder in the sidebar, (3) Metals tab, (4) calendar, (5) settings panel.
+
+Background in all five: Sanford Robinson Gifford, *The Artist Sketching at Mount Desert, Maine* (1864–1865), National Gallery of Art, Washington, accession 2004.99.1. Public domain (NGA Open Access): https://www.nga.gov/artworks/121618-artist-sketching-mount-desert-maine
