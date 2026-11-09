@@ -19,7 +19,7 @@ Kotilo New Tab (browser extension for Chrome and Firefox) is being published to 
    - Title: "Kotilo New Tab". Tagline: "A calm new tab page: your bookmarks in a sidebar, with clock, weather, calendar, to-dos, notes, news, Pomodoro and exchange rates. No account, no tracking, no ads."
    - Feature list: take it from the "Features" section of the extension `README.md`.
    - Screenshots: `store/screenshots/1-main.png` … `5-settings.png` in the extension repository (1280×800, demo data only).
-   - Install buttons: "Add to Chrome" and "Add to Firefox". The store URLs do not exist yet; until they do, show the buttons disabled with "Coming soon", or link to the GitHub repository. The maintainer will send the final URLs after the listings are approved.
+   - Install buttons: "Add to Firefox" → https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (submitted 2026-11-09, live once Mozilla approves it; until then the page shows "not available"). "Add to Chrome": no URL yet (Chrome Web Store submission pending); show it disabled with "Coming soon" or link to the GitHub repository. The maintainer will send the Chrome URL after approval.
    - Footer links: Privacy (`/newtab/privacy/`), Source (GitHub repository), Issues (`/issues` of the repository), Licence (MIT).
 3. **Home page (`index.html`)**: add Kotilo New Tab to wherever other Kotilo products are listed (or add a small "More from Kotilo" section with Kotilo Kit and Kotilo New Tab), linking to `/newtab/`.
 
@@ -32,4 +32,5 @@ Kotilo New Tab (browser extension for Chrome and Firefox) is being published to 
 | Browsers | Chrome (and Chromium browsers), Firefox 142+ |
 | Licence | MIT |
 | Firefox add-on ID | newtab@kotilo.dev |
+| Firefox listing | https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ |
 | Data | Stays in the browser; no analytics. Contacts Open-Meteo, BigDataCloud, Nager.Date, BrainyQuote, currency-api; optional Finnhub (user's own key), TEFAS (opt-in), user-added RSS feeds |

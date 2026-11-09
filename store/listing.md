@@ -3,6 +3,10 @@
 ## Name
 Kotilo New Tab
 
+## Status
+- Firefox (AMO): submitted 2026-11-09 as https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (listed, MIT, category Tabs). The privacy policy text must be pasted in the Developer Hub (the API ignored it).
+- Chrome Web Store: not submitted yet. Upload dist/kotilo-newtab-<version>-chrome-store.zip.
+
 ## Short description (Chrome: max 132 characters; AMO summary: max 250)
 Your bookmarks in a sidebar, with clock, weather, calendar, to-dos, notes, news feeds, Pomodoro and exchange rates. No tracking.
 
