@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmAG8r39NCQwHZn+bo8m9sY2G3cVSxVUIW1PUcMfWulo0dHzUuzCgZhYMZkjejjDufg79YDnC/ODjryRopt+KMIH72Wo+m+9hGALej0195znJUQHNqWWdhtB+IUlXy0L3+CMgdDIPaB4vxvtmU5mkIRGpoDf8QUvOmTTjFk/HusOCK5dtYwk7QQprxwVKoS/SEafImOKrNa5Ai24x8gIppU+fgMGMA6SMpCRGykVSQwjAJE27qgK5vCFa2c4UXGAKE1BOxasUyzAr5tuTPBBOC7UdgWN6ctt20i+YjhYui6pNAAfRoKAsdBQdwV0TqZSQ0GrQH2eksyvQKyoaR1F7hwIDAQAB",
+  "name": "Kotilo New Tab",
+  "short_name": "New Tab",
+  "version": "3.0.0",
+  "description": "Bookmarks sidebar, weather, calendar, to-dos, notes, news, Pomodoro and exchange rates on every new tab. No tracking.",
+  "homepage_url": "https://kotilo.dev",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "bookmarks",
+    "favicon",
+    "storage",
+    "geolocation",
+    "sessions",
+    "tabs",
+    "topSites",
+    "unlimitedStorage",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://api.open-meteo.com/*",
+    "https://geocoding-api.open-meteo.com/*",
+    "https://api.bigdatacloud.net/*",
+    "https://date.nager.at/*",
+    "https://www.brainyquote.com/*",
+    "https://cdn.jsdelivr.net/*",
+    "https://*.currency-api.pages.dev/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ]
+}

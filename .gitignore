@@ -1,0 +1,6 @@
+# Gizli anahtar asla depoya girmez (yalnızca ~/.secrets/new-tab-extension altında durur)
+*.pem
+*.crx
+*.zip
+dist/
+node_modules/

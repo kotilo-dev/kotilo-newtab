@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Tab</title>
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+  <div class="bg" id="bg" aria-hidden="true"></div>
+
+  <!-- Sol kenar çubuğu: yer imleri -->
+  <aside class="side" id="side" aria-label="Bookmarks">
+    <div class="side-top">
+      <div class="side-tabs" id="sideTabs" role="tablist" aria-label="Sidebar">
+        <!-- Dört sekme adı yan yana sığmadığı için simge; ad, ipucu (title) ve ekran okuyucu metni olarak duruyor -->
+        <button class="side-tab" role="tab" data-tab="bm" aria-controls="paneBm" title="Bookmarks">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg><span class="sr">Bookmarks</span></button>
+        <button class="side-tab" role="tab" data-tab="closed" aria-controls="paneClosed" title="Recently closed">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="sr">Recently closed</span></button>
+        <button class="side-tab" role="tab" data-tab="top" aria-controls="paneTop" title="Top sites">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span class="sr">Top sites</span></button>
+        <button class="side-tab" role="tab" data-tab="news" aria-controls="paneNews" title="News (RSS)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14"/><circle cx="6" cy="18" r="1.6"/></svg><span class="sr">News</span></button>
+      </div>
+      <div class="side-tools">
+        <button class="icon-btn" id="sideAdd" title="Add bookmark or folder" aria-label="Add bookmark or folder">＋</button>
+        <button class="icon-btn" id="sideHide" title="Hide sidebar" aria-label="Hide sidebar">⇤</button>
+      </div>
+    </div>
+
+    <div class="side-pane" id="paneBm" role="tabpanel">
+    <!-- Kök görünüm: sık kullanılanlar ve klasörler -->
+    <div class="side-view" id="sideRoot">
+      <section id="frequentWrap" hidden>
+        <h2 class="side-title">Frequently used</h2>
+        <div class="side-list" id="frequent"></div>
+      </section>
+      <h2 class="side-title">Folders</h2>
+      <nav class="side-list" id="folders" aria-label="Folders"></nav>
+    </div>
+
+    <!-- Klasör görünümü: tıklanan klasörün içeriği, kenar çubuğunun içinde -->
+    <div class="side-view" id="sideFolder" hidden>
+      <button class="side-back" id="sideBack" title="Back (Backspace / Esc) — drop here to move up">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+        <span id="sideBackLabel">Bookmarks</span>
+      </button>
+      <nav class="side-crumb" id="sideCrumb" aria-label="Folder path" hidden></nav>
+      <div class="side-head">
+        <h2 id="sideTitle"></h2>
+        <small id="sideCount"></small>
+      </div>
+      <div class="side-list" id="sideItems" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- Son kapatılan sekmeler ve en çok ziyaret edilen siteler -->
+    <div class="side-pane" id="paneClosed" role="tabpanel" hidden>
+      <h2 class="side-title">Recently closed</h2>
+      <div class="side-list" id="closedList"></div>
+    </div>
+    <div class="side-pane" id="paneTop" role="tabpanel" hidden>
+      <h2 class="side-title">Most visited</h2>
+      <div class="side-list" id="topList"></div>
+    </div>
+    <!-- RSS haberleri: birden fazla kaynak, kaynak filtresi -->
+    <div class="side-pane" id="paneNews" role="tabpanel" hidden>
+      <div class="news-head">
+        <h2 class="side-title">News</h2>
+        <small class="muted" id="newsState"></small>
+        <button class="icon-btn" id="newsRefresh" title="Refresh" aria-label="Refresh news">↻</button>
+        <button class="icon-btn" id="newsManage" title="Manage sources" aria-label="Manage sources" aria-expanded="false">⚙</button>
+      </div>
+      <div class="news-sources" id="newsSources" hidden></div>
+      <div class="news-filter" id="newsFilter" role="group" aria-label="Filter by source"></div>
+      <div class="news-list" id="newsList"></div>
+    </div>
+
+    <div class="side-foot">
+      <button class="side-settings" id="setOpen">⚙ Settings</button>
+      <div class="side-keys">
+        <span><kbd>/</kbd> search</span>
+        <span><kbd>⌫</kbd> back</span>
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span>Right-click to edit · drag to move</span>
+      </div>
+    </div>
+  </aside>
+  <button class="side-show glass" id="sideShow" title="Show sidebar">☰ Sidebar</button>
+
+  <main class="main">
+    <section class="hero">
+      <div class="greet" id="greet"></div>
+      <div class="time"><span id="hm">--:--</span><span class="sec" id="sec">--</span></div>
+      <div class="date-wrap">
+        <div class="date" id="date" role="button" tabindex="0" title="Show calendar" aria-controls="cal" aria-expanded="false"></div>
+        <!-- Tarihe tıklayınca açılan aylık takvim -->
+        <section class="cal" id="cal" aria-label="Calendar" hidden>
+          <header class="cal-head">
+            <button class="icon-btn" id="calPrev" aria-label="Previous month">‹</button>
+            <h3 id="calTitle"></h3>
+            <button class="icon-btn" id="calNext" aria-label="Next month">›</button>
+            <button class="link-btn" id="calToday">Today</button>
+          </header>
+          <div class="cal-grid" id="calGrid"></div>
+          <ul class="cal-hol" id="calHol" hidden></ul>
+        </section>
+      </div>
+      <div class="clocks" id="clocks" aria-label="World clocks" hidden></div>
+      <button class="quote" id="quote" title="Show another quote"></button>
+
+      <div class="search-wrap">
+        <div class="search glass">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Search tabs and bookmarks — Enter searches Google if nothing matches" autocomplete="off" spellcheck="false">
+          <kbd>/</kbd>
+        </div>
+        <ul class="results" id="results" role="listbox" hidden></ul>
+      </div>
+
+      <div class="focus" id="focus">
+        <form id="focusForm">
+          <label for="focusInput" class="focus-ask">What is your main focus today?</label>
+          <input id="focusInput" autocomplete="off" maxlength="120">
+        </form>
+        <div class="focus-show" id="focusShow" hidden>
+          <div class="focus-label">TODAY’S FOCUS</div>
+          <div class="focus-row">
+            <input type="checkbox" id="focusDone" aria-label="Done">
+            <span id="focusText"></span>
+            <button id="focusEdit" class="focus-btn" title="Edit" aria-label="Edit focus">✎</button>
+            <button id="focusDel" class="focus-btn" title="Delete" aria-label="Delete focus">✕</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="widgets">
+      <article class="widget glass" id="wTodo">
+        <header><h3>To-do</h3><button class="link-btn" id="todoClear" hidden>Clear completed</button></header>
+        <ul class="todos" id="todos"></ul>
+        <form id="todoForm"><input id="todoInput" placeholder="+ Add a task, press Enter" autocomplete="off" maxlength="200"></form>
+      </article>
+
+      <article class="widget glass" id="wNotes">
+        <header><h3>Notes</h3><small id="noteState"></small></header>
+        <textarea id="note" placeholder="Write anything; it saves automatically." spellcheck="false"></textarea>
+      </article>
+
+      <article class="widget glass mkt" id="wMarkets" aria-label="Markets">
+        <header>
+          <div class="tabs mkt-tabs" role="tablist" aria-label="Markets">
+            <button class="tab" role="tab" data-mtab="fx" aria-controls="mktFx" title="Exchange rates">FX</button>
+            <button class="tab" role="tab" data-mtab="metals" aria-controls="mktList" title="Precious metals">Metals</button>
+            <button class="tab" role="tab" data-mtab="crypto" aria-controls="mktList" title="Cryptocurrencies">Crypto</button>
+            <button class="tab" role="tab" data-mtab="stocks" aria-controls="mktList" title="US stocks and ETFs (Finnhub)" hidden>Stocks</button>
+            <button class="tab" role="tab" data-mtab="funds" aria-controls="mktList" title="Funds (regional sources)" hidden>Funds</button>
+          </div>
+        </header>
+        <div class="mkt-pane" id="mktFx" role="tabpanel">
+          <div class="market" id="market"><div class="muted">Loading…</div></div>
+          <form class="conv" id="conv" aria-label="Currency converter">
+            <input id="cvAmt" type="number" min="0" step="any" value="100" aria-label="Amount">
+            <select id="cvFrom" aria-label="From currency"></select>
+            <span class="conv-arrow" aria-hidden="true">→</span>
+            <select id="cvTo" aria-label="To currency"></select>
+            <output id="cvOut" for="cvAmt cvFrom cvTo"></output>
+          </form>
+        </div>
+        <div class="mkt-pane market" id="mktList" role="tabpanel" hidden></div>
+        <div class="mkt-foot"><small class="muted" id="mktTime"></small><button class="link-btn" id="mktRefresh" title="Refresh" aria-label="Refresh prices">↻</button></div>
+      </article>
+
+      <article class="widget glass pomo" id="wPomo" aria-label="Pomodoro timer">
+        <header><h3>Pomodoro</h3><span class="pomo-dots" id="pomoDots"></span></header>
+        <div class="seg pomo-modes" id="pomoModes" role="group" aria-label="Timer mode">
+          <button data-mode="focus">Focus</button>
+          <button data-mode="short">Short</button>
+          <button data-mode="long">Long</button>
+        </div>
+        <div class="pomo-time" id="pomoTime" aria-live="off">25:00</div>
+        <div class="pomo-track"><div class="pomo-bar" id="pomoBar"></div></div>
+        <div class="pomo-msg" id="pomoMsg">Focus</div>
+        <div class="pomo-actions">
+          <button class="btn btn-primary" id="pomoStart">Start</button>
+          <button class="btn" id="pomoReset" title="Reset" aria-label="Reset timer">↺</button>
+          <button class="btn" id="pomoSkip" title="Skip to next" aria-label="Skip to next session">⏭</button>
+        </div>
+      </article>
+
+      <article class="widget glass weather" id="weather" aria-label="Weather">
+        <header>
+          <h3>Weather</h3>
+          <button class="w-city" id="wCity" title="Change city">📍 <span id="wCityName">Location</span></button>
+        </header>
+        <form class="w-city-form" id="wCityForm" hidden>
+          <input id="wCityInput" placeholder="City (e.g. London)" autocomplete="off">
+          <button type="submit">Save</button>
+          <button type="button" id="wAuto" title="Use browser location">Auto</button>
+        </form>
+        <div class="w-now">
+          <div class="w-icon" id="wIcon">·</div>
+          <div>
+            <div class="w-temp" id="wTemp">--°</div>
+            <div class="w-range" id="wRange"></div>
+          </div>
+        </div>
+        <div class="w-desc" id="wDesc">Loading weather…</div>
+        <div class="tabs w-tabs" role="tablist" aria-label="Forecast">
+          <button class="tab" role="tab" id="wTabHours" aria-controls="wHours">Hourly</button>
+          <button class="tab" role="tab" id="wTabDays" aria-controls="wDays">5 days</button>
+        </div>
+        <div class="w-hours" id="wHours" role="tabpanel"></div>
+        <div class="w-days" id="wDays" role="tabpanel" hidden></div>
+      </article>
+    </section>
+
+    <footer class="credit" id="credit"></footer>
+  </main>
+
+  <!-- Arka plan ayarı: kendi duvar kâğıtlarım / kapalı -->
+  <section class="bg-panel" id="bgPanel" aria-label="Background settings" hidden>
+    <header><h3>Background</h3><button class="panel-close" id="bgClose" aria-label="Close">✕</button></header>
+    <div class="seg" role="group" aria-label="Background source">
+      <button data-mode="own">My wallpapers</button>
+      <button data-mode="off">Off</button>
+    </div>
+    <div id="ownBox" hidden>
+      <div class="wp-grid" id="wpGrid"></div>
+      <label class="wp-add">+ Add photos or videos<input type="file" id="wpFile" accept="image/*,video/mp4,video/webm" multiple hidden></label>
+      <small class="muted" id="wpState"></small>
+    </div>
+  </section>
+
+  <!-- Ayarlar paneli -->
+  <section class="bg-panel set-panel" id="settingsPanel" aria-label="Settings" hidden>
+    <header><h3>Settings</h3><button class="panel-close" id="setClose" aria-label="Close">✕</button></header>
+    <h4 class="set-title">Show</h4>
+    <div class="set-toggles" id="setToggles"></div>
+    <h4 class="set-title">Accent colour</h4>
+    <div class="set-accents" id="setAccents"></div>
+    <h4 class="set-title">Region and units</h4>
+    <div class="set-region" id="setRegion"></div>
+    <h4 class="set-title">World clocks</h4>
+    <ul class="clock-list" id="clockList"></ul>
+    <form class="clock-form" id="clockForm">
+      <input id="clockInput" placeholder="Add a city (e.g. Amsterdam)" autocomplete="off">
+      <button type="submit" class="btn">Add</button>
+    </form>
+    <small class="muted" id="clockState"></small>
+    <h4 class="set-title">Markets</h4>
+    <div class="seg" id="mwTabs" role="group" aria-label="Markets settings">
+      <button data-mw="fx">FX</button>
+      <button data-mw="metals">Metals</button>
+      <button data-mw="crypto">Crypto</button>
+      <button data-mw="stocks">Stocks</button>
+      <button data-mw="funds">Funds</button>
+    </div>
+    <div class="mw-intro muted" id="mwIntro"></div>
+    <ul class="clock-list mw-list" id="mwList"></ul>
+    <form class="clock-form mw-form" id="mwForm" autocomplete="off">
+      <select id="mwPick" aria-label="Add"></select>
+      <input id="mwInput" aria-label="Search">
+    </form>
+    <ul class="mw-suggest" id="mwSuggest" role="listbox" hidden></ul>
+    <small class="muted" id="mwState"></small>
+    <button class="btn set-bg" id="setBg">🖼 Background…</button>
+    <small class="muted">Settings sync with your browser account.</small>
+  </section>
+
+  <div class="ctx" id="ctx" role="menu" hidden></div>
+  <dialog class="dlg" id="dlg"></dialog>
+  <div class="drop-hint" aria-hidden="true">Drop a photo or video to add it as a background</div>
+
+  <script src="newtab.js"></script>
+  <script src="widgets.js"></script>
+  <script src="manage.js"></script>
+  <script src="settings.js"></script>
+  <script src="markets.js"></script>
+  <script src="calendar.js"></script>
+  <script src="news.js"></script>
+  <script src="pomodoro.js"></script>
+</body>
+</html>
