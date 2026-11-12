@@ -4,8 +4,13 @@
 Kotilo New Tab
 
 ## Status
-- Firefox (AMO): submitted 2026-11-09 as https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (listed, MIT, category Tabs). The privacy policy text must be pasted in the Developer Hub (the API ignored it).
+- Firefox (AMO): public since 2026-11-09 at https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (version 3.0.0, MIT, category Tabs). The privacy policy text must be pasted in the Developer Hub (the API ignored it).
 - Chrome Web Store: not submitted yet. Upload dist/kotilo-newtab-<version>-chrome-store.zip.
+
+## Links
+- Product page / homepage: https://kotilo.dev/newtab/
+- Privacy policy: https://kotilo.dev/newtab/privacy/
+- Support: https://github.com/kotilo-dev/kotilo-newtab/issues
 
 ## Short description (Chrome: max 132 characters; AMO summary: max 250)
 Your bookmarks in a sidebar, with clock, weather, calendar, to-dos, notes, news feeds, Pomodoro and exchange rates. No tracking.
@@ -27,7 +32,7 @@ Turn every new tab into a calm, useful start page.
 • Your own photo or video wallpapers, kept on your device.
 • Light and dark theme, accent colours, and every part can be shown or hidden. Settings sync through your browser account.
 
-Privacy first: no account, no analytics, no ads. Your data stays in your browser. The page only contacts the public services needed for weather, holidays, exchange rates and the daily quote. Full policy: <privacy policy URL — see docs/site-handoff.md>
+Privacy first: no account, no analytics, no ads. Your data stays in your browser. The page only contacts the public services needed for weather, holidays, exchange rates and the daily quote. Full policy: https://kotilo.dev/newtab/privacy/
 
 ## Single purpose (Chrome)
 Replaces the new tab page with a start page that shows the user's bookmarks together with everyday widgets (clock, weather, calendar, to-dos, notes, news, timer, exchange rates).
