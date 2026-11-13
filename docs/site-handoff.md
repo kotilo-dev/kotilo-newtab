@@ -19,7 +19,7 @@ Kotilo New Tab (browser extension for Chrome and Firefox) is being published to 
    - Title: "Kotilo New Tab". Tagline: "A calm new tab page: your bookmarks in a sidebar, with clock, weather, calendar, to-dos, notes, news, Pomodoro and exchange rates. No account, no tracking, no ads."
    - Feature list: take it from the "Features" section of the extension `README.md`.
    - Screenshots: `store/screenshots/1-main.png` … `5-settings.png` in the extension repository (1280×800, demo data only).
-   - Install buttons: "Add to Firefox" → https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (submitted 2026-11-09, live once Mozilla approves it; until then the page shows "not available"). "Add to Chrome": no URL yet (Chrome Web Store submission pending); show it disabled with "Coming soon" or link to the GitHub repository. The maintainer will send the Chrome URL after approval.
+   - Install buttons: "Add to Chrome" → https://chromewebstore.google.com/detail/kotilo-new-tab/jkalagachkdlnpmbgaoimmgkpgmbnhii (public since 2026-11-13). "Add to Firefox" → https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (public since 2026-11-09). Both listings are live: enable both buttons and remove the "coming soon" / "in review" note.
    - Footer links: Privacy (`/newtab/privacy/`), Source (GitHub repository), Issues (`/issues` of the repository), Licence (MIT).
 3. **Home page (`index.html`)**: add Kotilo New Tab to wherever other Kotilo products are listed (or add a small "More from Kotilo" section with Kotilo Kit and Kotilo New Tab), linking to `/newtab/`.
 

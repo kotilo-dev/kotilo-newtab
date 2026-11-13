@@ -5,7 +5,7 @@ Kotilo New Tab
 
 ## Status
 - Firefox (AMO): public since 2026-11-09 at https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (version 3.0.0, MIT, category Tabs). The privacy policy text must be pasted in the Developer Hub (the API ignored it).
-- Chrome Web Store: not submitted yet. Upload dist/kotilo-newtab-<version>-chrome-store.zip.
+- Chrome Web Store: public since 2026-11-13 at https://chromewebstore.google.com/detail/kotilo-new-tab/jkalagachkdlnpmbgaoimmgkpgmbnhii (version 3.0.0, store ID jkalagachkdlnpmbgaoimmgkpgmbnhii; differs from the unpacked ID because store packages have no `key`). Upload new versions as dist/kotilo-newtab-<version>-chrome-store.zip.
 
 ## Links
 - Product page / homepage: https://kotilo.dev/newtab/
