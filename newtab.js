@@ -168,7 +168,11 @@ function linkRow(n, prefix) {
   return a;
 }
 
-function openFolder(id) { navStack.push(id); renderNav('forward'); }
+function openFolder(id) {
+  // Filtre sonuçlarından açılınca klasörün tam yolu kurulur ve filtre kapanır.
+  if ($('bmFilter').value.trim()) { clearBmFilter(); navStack = ancestorIds(id); }
+  navStack.push(id); renderNav('forward');
+}
 function goBack() { if (!navStack.length) return false; navStack.pop(); renderNav('back'); return true; }
 function goTo(depth) { navStack = navStack.slice(0, depth); renderNav('back'); }
 $('sideBack').addEventListener('click', goBack);
@@ -177,8 +181,9 @@ function renderNav(dir) {
   // Yer imleri değiştiyse artık olmayan klasörleri yığından at.
   while (navStack.length && !byId.has(navStack[navStack.length - 1])) navStack.pop();
   const atRoot = navStack.length === 0;
-  $('sideRoot').hidden = !atRoot;
-  $('sideFolder').hidden = atRoot;
+  const filtering = !!$('bmFilter').value.trim(); // filtre doluyken yalnızca arama görünümü açık kalır
+  $('sideRoot').hidden = filtering || !atRoot;
+  $('sideFolder').hidden = filtering || atRoot;
   const view = atRoot ? $('sideRoot') : $('sideFolder');
 
   if (!atRoot) {
@@ -219,8 +224,76 @@ function renderNav(dir) {
 
 function renderSidebar() {
   $('folders').replaceChildren(...topFolders.map(folderRow));
-  renderNav();
+  renderBmSearch(); // filtre boşsa klasör görünümünü çizer; doluysa sonuçları tazeler
 }
+
+/* ---------------------------------------------------------
+   Kenar çubuğu filtresi: bütün yer imi çubuğunda klasör ve bağlantı arar.
+   Puanlama ortadaki aramayla aynı (score, highlight). Sonuçlar data-id taşıdığı için
+   sağ tık menüsü çalışır; düz listede sıra anlamsız olduğundan sürüklenemez.
+   --------------------------------------------------------- */
+const bmFilter = $('bmFilter');
+function clearBmFilter() { bmFilter.value = ''; $('sideSearch').hidden = true; }
+
+// Klasörün üst klasör id'leri, kökten başlayarak (yer imi çubuğunun kendisi hariç).
+function ancestorIds(id) {
+  const ids = [];
+  for (let n = nodeById.get(nodeById.get(id)?.parentId); n; n = nodeById.get(n.parentId)) ids.unshift(n.id);
+  return ids;
+}
+
+function searchRow(item, terms) {
+  const isFolder = !item.url;
+  const row = el(isFolder ? 'button' : 'a', { class: 'side-item side-hit', 'data-id': item.id, title: item.path ? item.path + '\n' + (item.url || item.title) : (item.url || item.title) },
+    isFolder ? svg(FOLDER) : favImg(item.url),
+    el('span', { class: 'hit-text' },
+      el('span', { class: 'name' }, highlight(item.title, terms)),
+      el('small', { class: 'hit-path', text: item.path || (isFolder ? 'Bookmarks bar' : hostOf(item.url)) })));
+  if (isFolder) {
+    row.addEventListener('click', () => openFolder(item.id));
+  } else {
+    row.href = item.url;
+    row.addEventListener('click', () => trackClick(item.url));
+    row.addEventListener('auxclick', (e) => { if (e.button === 1) trackClick(item.url); });
+  }
+  return row;
+}
+
+function renderBmSearch() {
+  const raw = bmFilter.value.trim();
+  $('sideSearch').hidden = !raw;
+  if (!raw) { renderNav(); return; }
+  $('sideRoot').hidden = true;
+  $('sideFolder').hidden = true;
+  const terms = norm(raw).split(/\s+/).filter(Boolean);
+  const folders = [...byId.values()].map((f) => ({ id: f.id, title: f.title || 'Untitled folder', url: '',
+    path: ancestorIds(f.id).map((i) => byId.get(i)?.title || 'Untitled').join(' › ') }));
+  const hits = [...folders, ...allLinks].map((x) => [x, score(x, terms)]).filter((x) => x[1] > 0)
+    .sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+  const shown = hits.slice(0, 100);
+  $('searchCount').textContent = hits.length === 0 ? 'No matches'
+    : hits.length > shown.length ? `${shown.length} of ${hits.length} matches` : `${hits.length} ${hits.length === 1 ? 'match' : 'matches'}`;
+  $('searchItems').replaceChildren(...(shown.length ? shown.map((x) => searchRow(x, terms))
+    : [el('div', { class: 'side-empty', text: `Nothing found. Press Enter to search Google for "${raw}".` })]));
+}
+
+bmFilter.addEventListener('input', renderBmSearch);
+bmFilter.addEventListener('keydown', (e) => {
+  const first = $('searchItems').querySelector('.side-item');
+  if (e.key === 'Escape') {
+    e.preventDefault(); e.stopPropagation();
+    if (bmFilter.value) { bmFilter.value = ''; renderBmSearch(); } else bmFilter.blur();
+  } else if (e.key === 'ArrowDown' && first && !$('sideSearch').hidden) {
+    e.preventDefault(); first.focus();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const newTab = e.ctrlKey || e.metaKey;
+    if (first && !$('sideSearch').hidden) {
+      if (first.tagName === 'A') { trackClick(first.href); openUrl(first.href, newTab); }
+      else first.click();
+    } else if (bmFilter.value.trim()) openUrl('https://www.google.com/search?q=' + encodeURIComponent(bmFilter.value.trim()), newTab);
+  }
+});
 
 // Kenar çubuğunun üstü: çubukta doğrudan duran bağlantılar + en az iki kez açılan yer imleri.
 function renderFrequent() {
@@ -382,18 +455,22 @@ document.addEventListener('keydown', (e) => {
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (document.querySelector('dialog[open]')) return; // açık pencere varken kısayollar çalışmasın
   if (e.key === '/') { e.preventDefault(); q.focus(); return; }
+  // Filtre sonuçlarındayken Esc filtre kutusuna döner (gizli klasör görünümünde geri gitmesin).
+  if (e.key === 'Escape' && !$('sideSearch').hidden && $('side').contains(document.activeElement)) { e.preventDefault(); bmFilter.focus(); return; }
   // Kenar çubuğunda bir üst klasöre dön.
   if ((e.key === 'Backspace' || e.key === 'Escape' || (e.altKey && e.key === 'ArrowLeft')) && navStack.length && !$('paneBm').hidden) { e.preventDefault(); goBack(); return; }
   // Kenar çubuğunda ok tuşlarıyla öğeler arasında gezin.
   if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && $('side').contains(document.activeElement)) {
-    const items = [...$('side').querySelectorAll('button, a')].filter((x) => x.offsetParent !== null);
+    const items = [...$('side').querySelectorAll('button, a, #bmFilter')].filter((x) => x.offsetParent !== null);
     const i = items.indexOf(document.activeElement);
     const next = items[i + (e.key === 'ArrowDown' ? 1 : -1)];
     if (next) { e.preventDefault(); next.focus(); }
     return;
   }
-  // Sayfada herhangi bir harfe basınca doğrudan aramaya yaz.
-  if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey && /\S/.test(e.key)) q.focus();
+  // Sayfada herhangi bir harfe basınca doğrudan aramaya yaz; filtre sonuçlarındayken filtreye.
+  if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey && /\S/.test(e.key)) {
+    (!$('sideSearch').hidden && $('side').contains(document.activeElement) ? bmFilter : q).focus();
+  }
 });
 
 /* =========================================================

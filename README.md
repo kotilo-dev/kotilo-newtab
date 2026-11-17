@@ -11,7 +11,7 @@ Part of [Kotilo](https://kotilo.dev) · Türkçe: [aşağıda](#türkçe)
 
 ## Features
 
-- **Bookmarks sidebar:** browse folders in place, search all bookmarks and open tabs, add, edit, delete and drag to reorder. Changes go straight to your browser's bookmarks.
+- **Bookmarks sidebar:** browse folders in place, filter the sidebar as you type, search all bookmarks and open tabs, add, edit, delete and drag to reorder. Changes go straight to your browser's bookmarks.
 - **Recent and top sites:** recently closed tabs and your most visited sites, one click away.
 - **News:** add any RSS or Atom feed (or a site address; its feed is found automatically) and filter by source.
 - **Clock and calendar:** world clocks; a monthly calendar with ISO week numbers and public holidays for your country (from Nager.Date).

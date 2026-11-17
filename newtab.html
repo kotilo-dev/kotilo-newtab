@@ -30,6 +30,16 @@
     </div>
 
     <div class="side-pane" id="paneBm" role="tabpanel">
+    <!-- Yer imi filtresi: yazınca kök ve klasör görünümü yerine eşleşen yer imleri listelenir -->
+    <div class="side-filter">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="bmFilter" type="search" placeholder="Filter bookmarks" aria-label="Filter bookmarks" aria-controls="sideSearch" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="side-view" id="sideSearch" hidden>
+      <h2 class="side-title" id="searchCount"></h2>
+      <div class="side-list" id="searchItems" aria-live="polite"></div>
+    </div>
+
     <!-- Kök görünüm: sık kullanılanlar ve klasörler -->
     <div class="side-view" id="sideRoot">
       <section id="frequentWrap" hidden>

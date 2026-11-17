@@ -21,7 +21,7 @@ Chrome: Productivity (Workflow & planning) · AMO: Tabs
 ## Detailed description
 Turn every new tab into a calm, useful start page.
 
-• Bookmarks sidebar — browse your bookmarks bar folder by folder, search bookmarks and open tabs as you type, and add, edit, delete or drag bookmarks without leaving the page.
+• Bookmarks sidebar — browse your bookmarks bar folder by folder, filter it as you type, search bookmarks and open tabs, and add, edit, delete or drag bookmarks without leaving the page.
 • Recently closed tabs and most visited sites.
 • News — follow any RSS or Atom feed and filter by source.
 • Clock, world clocks and a monthly calendar with public holidays for your country.
