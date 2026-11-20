@@ -22,6 +22,12 @@ Kotilo New Tab (browser extension for Chrome and Firefox) is being published to 
    - Install buttons: "Add to Chrome" → https://chromewebstore.google.com/detail/kotilo-new-tab/jkalagachkdlnpmbgaoimmgkpgmbnhii (public since 2026-11-13). "Add to Firefox" → https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ (public since 2026-11-09). Both listings are live: enable both buttons and remove the "coming soon" / "in review" note.
    - Footer links: Privacy (`/newtab/privacy/`), Source (GitHub repository), Issues (`/issues` of the repository), Licence (MIT).
 3. **Home page (`index.html`)**: add Kotilo New Tab to wherever other Kotilo products are listed (or add a small "More from Kotilo" section with Kotilo Kit and Kotilo New Tab), linking to `/newtab/`.
+4. **Promo video on the product page** (added 2026-11-20)
+   - Video: https://youtu.be/OaJ765YvvEo (50 seconds, 1920×1080, English captions, music; public on YouTube).
+   - Place it on `/newtab/` right below the tagline and install buttons, above the screenshots.
+   - Embed with the privacy-enhanced domain so no YouTube cookies are set until the visitor presses play (the policy says no tracking): `https://www.youtube-nocookie.com/embed/OaJ765YvvEo`. Use a responsive 16:9 box, `loading="lazy"`, a `title="Kotilo New Tab — 50-second tour"`, and `allow="encrypted-media; picture-in-picture; fullscreen"`.
+   - Without JavaScript or if embedding fails, keep a plain link: "▶ Watch the 50-second tour on YouTube" → https://youtu.be/OaJ765YvvEo.
+   - Optional: if the page sets a Content-Security-Policy, allow `frame-src https://www.youtube-nocookie.com`.
 
 ## Facts to keep consistent
 
