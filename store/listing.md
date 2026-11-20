@@ -10,6 +10,7 @@ Kotilo New Tab
 ## Links
 - Product page / homepage: https://kotilo.dev/newtab/
 - Privacy policy: https://kotilo.dev/newtab/privacy/
+- Promo video (YouTube, Chrome "YouTube video" field): https://youtu.be/OaJ765YvvEo
 - Support: https://github.com/kotilo-dev/kotilo-newtab/issues
 
 ## Short description (Chrome: max 132 characters; AMO summary: max 250)

@@ -9,6 +9,8 @@ Part of [Kotilo](https://kotilo.dev) · Türkçe: [aşağıda](#türkçe)
 - **Chrome** and Chromium browsers (Edge, Brave, Opera): [Chrome Web Store](https://chromewebstore.google.com/detail/kotilo-new-tab/jkalagachkdlnpmbgaoimmgkpgmbnhii)
 - **Firefox** 142+: [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/kotilo-new-tab/)
 
+▶ Watch the 50-second tour on YouTube: https://youtu.be/OaJ765YvvEo
+
 ## Features
 
 - **Bookmarks sidebar:** browse folders in place, filter the sidebar as you type, search all bookmarks and open tabs, add, edit, delete and drag to reorder. Changes go straight to your browser's bookmarks.
@@ -59,4 +61,4 @@ Bugs and ideas: [GitHub issues](https://github.com/kotilo-dev/kotilo-newtab/issu
 
 Kotilo New Tab, Chrome ve Firefox için yeni sekme sayfası: yer imi çubuğun kenar çubuğunda; saat, hava durumu, takvim, yapılacaklar, not, haber akışları, Pomodoro ve döviz kurlarıyla birlikte. Hesap yok, izleme yok, reklam yok. Ana para birimi, tatil ülkesi ve birimler ilk açılışta tarayıcı dilinden tahmin edilir; ⚙ Settings → Region and units bölümünden değiştirilir. Türkiye kullanıcıları için TEFAS fonları Settings → Markets → Funds altında açılabilir.
 
-Kurulum: [Chrome Web Mağazası](https://chromewebstore.google.com/detail/kotilo-new-tab/jkalagachkdlnpmbgaoimmgkpgmbnhii) · [Firefox Eklentileri](https://addons.mozilla.org/firefox/addon/kotilo-new-tab/)
+Kurulum: [Chrome Web Mağazası](https://chromewebstore.google.com/detail/kotilo-new-tab/jkalagachkdlnpmbgaoimmgkpgmbnhii) · [Firefox Eklentileri](https://addons.mozilla.org/firefox/addon/kotilo-new-tab/) · [Tanıtım videosu (YouTube)](https://youtu.be/OaJ765YvvEo)
