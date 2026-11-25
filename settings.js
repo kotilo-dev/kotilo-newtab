@@ -102,7 +102,7 @@ function renderClocks() {
   box.replaceChildren(...settings.clocks.map((c) => {
     let time = '—', diff = '';
     try {
-      time = new Intl.DateTimeFormat('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' }).format(now);
+      time = new Intl.DateTimeFormat(LOCALE, { timeZone: c.tz, hour: '2-digit', minute: '2-digit' }).format(now);
       const d = dayKeyFmt(c.tz).format(now);
       if (d > localDay) diff = '+1'; else if (d < localDay) diff = '−1';
     } catch { /* geçersiz saat dilimi */ }
@@ -115,9 +115,9 @@ setInterval(renderClocks, 15e3);
    Ayarlar paneli
    --------------------------------------------------------- */
 const TOGGLES = [
-  ['seconds', 'Clock seconds'], ['quote', 'Quote of the day'], ['focus', 'Daily focus'], ['weather', 'Weather card'],
-  ['cards.todo', 'To-do card'], ['cards.notes', 'Notes card'], ['cards.markets', 'Markets card'], ['cards.pomo', 'Pomodoro card'],
-  ['sidebar', 'Bookmarks sidebar'],
+  ['seconds', t('set.t.seconds')], ['quote', t('set.t.quote')], ['focus', t('set.t.focus')], ['weather', t('set.t.weather')],
+  ['cards.todo', t('set.t.todo')], ['cards.notes', t('set.t.notes')], ['cards.markets', t('set.t.markets')], ['cards.pomo', t('set.t.pomo')],
+  ['sidebar', t('set.t.sidebar')],
 ];
 const getPath = (k) => k.split('.').reduce((o, p) => o[p], settings);
 function setPath(k, v) { const ps = k.split('.'); const last = ps.pop(); ps.reduce((o, p) => o[p], settings)[last] = v; }
@@ -130,23 +130,23 @@ function renderSettingsPanel() {
     return el('label', { class: 'set-toggle' }, cb, el('span', { text: label }));
   }));
   $('setAccents').replaceChildren(...Object.entries(ACCENTS).map(([name, color]) => {
-    const b = el('button', { class: 'swatch' + (settings.accent === name ? ' active' : ''), title: name, 'aria-label': name + ' accent', 'aria-pressed': String(settings.accent === name) });
+    const b = el('button', { class: 'swatch' + (settings.accent === name ? ' active' : ''), title: t('accent.' + name), 'aria-label': t('accent.aria', { name: t('accent.' + name) }), 'aria-pressed': String(settings.accent === name) });
     b.style.background = color;
     b.addEventListener('click', () => { settings.accent = name; saveSettings(); });
     return b;
   }));
   $('clockList').replaceChildren(...settings.clocks.map((c, i) => {
-    const del = el('button', { class: 'link-btn', title: 'Remove', 'aria-label': 'Remove ' + c.name, text: '✕' });
+    const del = el('button', { class: 'link-btn', title: t('common.remove'), 'aria-label': t('common.removeX', { name: c.name }), text: '✕' });
     del.addEventListener('click', () => { settings.clocks.splice(i, 1); saveSettings(); });
     return el('li', {}, el('span', { text: c.name }), el('small', { text: c.tz }), del);
   }));
-  if (!settings.clocks.length) $('clockList').replaceChildren(el('li', { class: 'muted', text: 'No world clocks.' }));
+  if (!settings.clocks.length) $('clockList').replaceChildren(el('li', { class: 'muted', text: t('set.noClocks') }));
   renderRegion();
   if (typeof renderWatchlist === 'function') renderWatchlist(); // markets.js
 }
 /* ---- Bölge ve birimler ---- */
-const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-const currencyNames = new Intl.DisplayNames(['en'], { type: 'currency' });
+const regionNames = new Intl.DisplayNames([LANG], { type: 'region' });
+const currencyNames = new Intl.DisplayNames([LANG], { type: 'currency' });
 function currencyCodes() { // tarayıcının bildiği ISO para birimleri; currency-api çoğunu kapsıyor
   try { return Intl.supportedValuesOf('currency').map((c) => c.toLowerCase()); } catch { return Object.values(REGION_CURRENCY).concat('eur'); }
 }
@@ -174,18 +174,20 @@ async function renderRegion() {
   const setR = (k) => (v) => { settings.region[k] = v; saveSettings(); };
   const cur = [...new Set(currencyCodes().concat(r.base))].sort().map((c) => [c, currencyLabel(c)]);
   const countries = await holidayCountries();
-  const hol = [['', 'None']].concat(countries.map((cc) => [cc, regionNames.of(cc) || cc]).sort((a, b) => a[1].localeCompare(b[1])));
-  if (countries.length && r.holidays && !countries.includes(r.holidays)) hol.push([r.holidays, regionNames.of(r.holidays) + ' (no data)']);
+  const hol = [['', t('common.none')]].concat(countries.map((cc) => [cc, regionNames.of(cc) || cc]).sort((a, b) => a[1].localeCompare(b[1], LANG)));
+  if (countries.length && r.holidays && !countries.includes(r.holidays)) hol.push([r.holidays, regionNames.of(r.holidays) + t('set.noData')]);
   $('setRegion').replaceChildren(
-    selectRow('Currency', 'setBase', cur, r.base, (v) => {
+    // Dil cihaza özeldir (localStorage), ayarlarla senkronlanmaz; seçince sayfa yenilenir (i18n.js).
+    selectRow(t('set.language'), 'setLang', [['auto', t('lang.auto')], ['en', 'English'], ['tr', 'Türkçe']], getLangPref(), setLang),
+    selectRow(t('set.currency'), 'setBase', cur, r.base, (v) => {
       // Ana para birimi değişince eskisi izleme listesine geçer (yenisi listede varsa onun yerine).
       const fx = settings.markets.fx, old = settings.region.base, i = fx.indexOf(v);
       if (i >= 0) fx[i] = old; else if (!fx.includes(old)) fx.unshift(old);
       settings.region.base = v; saveSettings();
     }),
-    selectRow('Holidays', 'setHol', hol, r.holidays, setR('holidays')),
-    selectRow('Temperature', 'setTemp', [['C', '°C'], ['F', '°F']], r.temp, setR('temp')),
-    selectRow('Wind', 'setWind', [['kmh', 'km/h'], ['mph', 'mph'], ['ms', 'm/s']], r.wind, setR('wind')));
+    selectRow(t('set.holidays'), 'setHol', hol, r.holidays, setR('holidays')),
+    selectRow(t('set.temperature'), 'setTemp', [['C', '°C'], ['F', '°F']], r.temp, setR('temp')),
+    selectRow(t('set.wind'), 'setWind', [['kmh', 'km/h'], ['mph', 'mph'], ['ms', 'm/s']], r.wind, setR('wind')));
 }
 
 function toggleSettings(force) {
@@ -202,16 +204,16 @@ $('clockForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = $('clockInput').value.trim();
   if (!name) return;
-  $('clockState').textContent = 'Searching…';
+  $('clockState').textContent = t('common.searching');
   try {
-    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&name=' + encodeURIComponent(name));
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=' + LANG + '&name=' + encodeURIComponent(name));
     const g = ((await r.json()).results || [])[0];
-    if (!g || !g.timezone) { $('clockState').textContent = 'City not found.'; return; }
+    if (!g || !g.timezone) { $('clockState').textContent = t('set.cityNotFound'); return; }
     settings.clocks.push({ name: g.name, tz: g.timezone });
     $('clockInput').value = '';
-    $('clockState').textContent = `Added ${g.name}${g.country ? ', ' + g.country : ''}.`;
+    $('clockState').textContent = t('set.added', { name: g.name + (g.country ? ', ' + g.country : '') });
     saveSettings();
-  } catch { $('clockState').textContent = 'Connection error.'; }
+  } catch { $('clockState').textContent = t('set.connError'); }
 });
 
 // Kenar çubuğunu gizle / göster

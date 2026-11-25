@@ -4,8 +4,8 @@
    alınır ve 30 gün önbellekte tutulur; dinî bayramlar her yıl değiştiği için elle yazılmadı.
    newtab.js'ten sonra yüklenir ($, el, store onlardan gelir). */
 
-const calMonthFmt = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' });
-const calDayFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', weekday: 'short' });
+const calMonthFmt = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' });
+const calDayFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', weekday: 'short' });
 let calView = null;           // gösterilen ayın ilk günü
 const holidayCache = {};      // 'ÜLKE-yıl' → { 'YYYY-MM-DD': [ad, ...] }
 
@@ -24,7 +24,9 @@ const holidayCountry = () => (typeof settings !== 'undefined' && settings.region
 async function getHolidays(year) {
   const cc = holidayCountry();
   if (!cc) return {};
-  const id = cc + '-' + year;
+  // Nager.Date'in localName alanı ülkenin kendi dilinde; arayüz dili ülkenin diliyle aynıysa (şimdilik tr/TR) o kullanılır.
+  const local = LANG === 'tr' && cc === 'TR';
+  const id = cc + '-' + year + (local ? '-local' : '');
   if (holidayCache[id]) return holidayCache[id];
   const key = 'holidays-' + id;
   let c = await store.get(key, null);
@@ -34,7 +36,7 @@ async function getHolidays(year) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const map = {};
       // Yalnızca ülke genelindeki tatiller (eyalet/bölge tatilleri atlanır).
-      for (const h of await r.json()) if (h.global !== false) (map[h.date] = map[h.date] || []).push(h.name);
+      for (const h of await r.json()) if (h.global !== false) (map[h.date] = map[h.date] || []).push((local && h.localName) || h.name);
       c = { at: Date.now(), map };
       store.set(key, c);
     } catch (e) {
@@ -56,7 +58,7 @@ async function renderCalendar() {
   if (first !== calView) return; // bu sırada başka aya geçildiyse eski çizimi bırak
 
   $('calTitle').textContent = calMonthFmt.format(first);
-  const cells = [el('div', { class: 'cal-wk cal-h', text: 'Wk' }), ...['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((d, i) => el('div', { class: 'cal-h' + (i > 4 ? ' we' : ''), text: d }))];
+  const cells = [el('div', { class: 'cal-wk cal-h', text: t('cal.wk') }), ...t('cal.days').split(',').map((d, i) => el('div', { class: 'cal-h' + (i > 4 ? ' we' : ''), text: d }))];
   const monthHol = [];
   for (let w = 0; w < 6; w++) {
     const monday = new Date(start); monday.setDate(start.getDate() + w * 7);

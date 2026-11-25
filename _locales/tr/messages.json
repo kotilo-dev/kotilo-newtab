@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Kotilo New Tab",
+    "description": "Extension name"
+  },
+  "extShortName": {
+    "message": "Yeni Sekme",
+    "description": "Short extension name"
+  },
+  "extDescription": {
+    "message": "Her yeni sekmede yer imi kenar çubuğu, hava durumu, takvim, yapılacaklar, notlar, haberler, Pomodoro ve döviz kurları. İzleme yok.",
+    "description": "Extension description (max 132 characters)"
+  }
+}

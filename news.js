@@ -14,7 +14,7 @@ let feedCache = {};        // url → {at, title, items:[...], error}
 let newsFilter = 'all';    // 'all' ya da kaynak url'si
 let newsLoading = false;
 
-const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' });
+const rtf = new Intl.RelativeTimeFormat(LANG, { numeric: 'auto', style: 'short' });
 function timeAgo(t) {
   const s = (t - Date.now()) / 1000;
   const abs = Math.abs(s);
@@ -95,7 +95,7 @@ function parseFeed(text, baseUrl) {
       let img = itemImage(it);
       if (img) { try { img = safeHttp(new URL(img, baseUrl).href); } catch { img = null; } }
       return {
-        title: plain(txt(it, ['title'])) || '(untitled)',
+        title: plain(txt(it, ['title'])) || t('news.untitled'),
         link: safeHttp(link),
         date: Date.parse(dateStr) || 0,
         cat: plain(cat).slice(0, 40),
@@ -121,7 +121,7 @@ async function loadFeed(f, force) {
   try {
     const { text } = await fetchText(f.url);
     const res = parseFeed(text, f.url);
-    if (!res.items) throw new Error('Not an RSS/Atom feed');
+    if (!res.items) throw new Error(t('news.notFeed'));
     feedCache[f.url] = { at: Date.now(), title: res.title, items: res.items };
   } catch (e) {
     console.warn('[new-tab] feed', f.url, e);
@@ -132,7 +132,7 @@ async function loadFeed(f, force) {
 async function refreshNews(force = false) {
   if (newsLoading) return;
   newsLoading = true;
-  $('newsState').textContent = 'Loading…';
+  $('newsState').textContent = t('common.loading');
   await Promise.all(feeds.map((f) => loadFeed(f, force)));
   store.set('feedCache', feedCache);
   newsLoading = false;
@@ -156,7 +156,7 @@ function renderNews() {
     b.addEventListener('click', () => { newsFilter = key; store.set('newsFilter', key); renderNews(); });
     return b;
   };
-  $('newsFilter').replaceChildren(...(feeds.length > 1 ? [chip('all', 'All', feeds.reduce((a, f) => a + count(f), 0))] : []),
+  $('newsFilter').replaceChildren(...(feeds.length > 1 ? [chip('all', t('news.all'), feeds.reduce((a, f) => a + count(f), 0))] : []),
     ...feeds.map((f) => chip(f.url, feedName(f), count(f))));
   $('newsFilter').hidden = !feeds.length;
 
@@ -182,19 +182,19 @@ function renderNews() {
   const problems = feeds.filter((f) => feedCache[f.url] && feedCache[f.url].error && (newsFilter === 'all' || newsFilter === f.url)).map((f) => {
     const err = feedCache[f.url].error;
     if (err === 'permission') {
-      const b = el('button', { class: 'btn btn-primary', text: `Allow access to ${hostOf(f.url)}` });
+      const b = el('button', { class: 'btn btn-primary', text: t('news.allow', { host: hostOf(f.url) }) });
       b.addEventListener('click', async () => { if (await requestAccess(f.url)) { delete feedCache[f.url]; refreshNews(true); } });
-      return el('div', { class: 'news-problem' }, el('span', { text: `${feedName(f)} needs permission to read its feed.` }), b);
+      return el('div', { class: 'news-problem' }, el('span', { text: t('news.needsPerm', { name: feedName(f) }) }), b);
     }
-    return el('div', { class: 'news-problem' }, el('span', { text: `${feedName(f)}: could not load (${err}).` }));
+    return el('div', { class: 'news-problem' }, el('span', { text: t('news.loadFail', { name: feedName(f), err }) }));
   });
 
-  if (!feeds.length) rows.push(el('div', { class: 'side-empty', text: 'No sources yet. Press ＋ to add an RSS feed or a website address.' }));
-  else if (!rows.length && !problems.length) rows.push(el('div', { class: 'side-empty', text: newsLoading ? 'Loading…' : 'No news in this source.' }));
+  if (!feeds.length) rows.push(el('div', { class: 'side-empty', text: t('news.noSources') }));
+  else if (!rows.length && !problems.length) rows.push(el('div', { class: 'side-empty', text: newsLoading ? t('common.loading') : t('news.noNews') }));
   $('newsList').replaceChildren(...problems, ...rows);
 
   const latest = Math.max(0, ...feeds.map((f) => (feedCache[f.url] && !feedCache[f.url].error && feedCache[f.url].at) || 0));
-  $('newsState').textContent = newsLoading ? 'Loading…' : latest ? 'updated ' + timeAgo(latest) : '';
+  $('newsState').textContent = newsLoading ? t('common.loading') : latest ? t('news.updated', { ago: timeAgo(latest) }) : '';
   if (!$('newsSources').hidden) renderSources();
 }
 
@@ -202,10 +202,10 @@ function renderNews() {
 function renderSources() {
   const rows = feeds.map((f, i) => {
     const c = feedCache[f.url];
-    const status = !c ? '' : c.error === 'permission' ? 'needs permission' : c.error ? 'error' : `${(c.items || []).length} items`;
-    const del = el('button', { class: 'icon-btn', title: 'Remove source', 'aria-label': 'Remove ' + feedName(f), text: '✕' });
+    const status = !c ? '' : c.error === 'permission' ? t('news.statusPerm') : c.error ? t('news.statusErr') : t('news.items', { n: (c.items || []).length });
+    const del = el('button', { class: 'icon-btn', title: t('news.removeSource'), 'aria-label': t('common.removeX', { name: feedName(f) }), text: '✕' });
     del.addEventListener('click', async () => {
-      const ok = await openDialog({ title: 'Remove source?', message: `“${feedName(f)}” will be removed from your news sources.`, okText: 'Remove', danger: true });
+      const ok = await openDialog({ title: t('news.removeTitle'), message: t('news.removeMsg', { name: feedName(f) }), okText: t('common.remove'), danger: true });
       if (!ok) return;
       feeds.splice(i, 1); delete feedCache[f.url];
       await syncStore.set('feeds', feeds); store.set('feedCache', feedCache);
@@ -214,7 +214,7 @@ function renderSources() {
     return el('div', { class: 'news-src' }, favImg(f.url),
       el('span', { class: 'news-src-text' }, el('span', { class: 'name', text: feedName(f) }), el('small', { text: hostOf(f.url) + (status ? ' · ' + status : '') })), del);
   });
-  const add = el('button', { class: 'btn', text: '＋ Add source' });
+  const add = el('button', { class: 'btn', text: t('news.addSource') });
   add.addEventListener('click', addFeed);
   $('newsSources').replaceChildren(...rows, add);
 }
@@ -229,18 +229,18 @@ $('newsRefresh').addEventListener('click', () => refreshNews(true));
    Kaynak ekleme: akış adresi ya da site adresi (sayfadaki RSS bağlantısı aranır)
    --------------------------------------------------------- */
 async function addFeed() {
-  const v = await openDialog({ title: 'Add RSS feed', message: 'Paste a feed address (RSS/Atom) or a website address; the feed link on the page will be detected.',
-    fields: [{ key: 'url', label: 'Feed or website URL', placeholder: 'https://…/rss.xml' }], okText: 'Add' });
+  const v = await openDialog({ title: t('news.addFeed'), message: t('news.addMsg'),
+    fields: [{ key: 'url', label: t('news.urlLabel'), placeholder: 'https://…/rss.xml' }], okText: t('common.add') });
   if (!v) return;
   let url = normalizeUrl(v.url);
-  if (!url || !safeHttp(url)) return openDialog({ title: 'Invalid URL', message: 'Please enter a valid http(s) address.', okText: 'OK' });
-  if (feeds.some((f) => f.url === url)) return openDialog({ title: 'Already added', message: 'This feed is already in your sources.', okText: 'OK' });
+  if (!url || !safeHttp(url)) return openDialog({ title: t('dlg.invalidUrl'), message: t('news.invalidMsg'), okText: t('common.ok') });
+  if (feeds.some((f) => f.url === url)) return openDialog({ title: t('news.already'), message: t('news.alreadyMsg'), okText: t('common.ok') });
 
   // Pencere kapandıktan hemen sonra, tıklamanın etkisi sürerken izin iste. Reddedilirse kaynak yine eklenir ve "Allow access" düğmesi çıkar.
   const granted = (await hasAccess(url)) || (await requestAccess(url));
   let title = '';
   if (granted) {
-    $('newsState').textContent = 'Checking…';
+    $('newsState').textContent = t('common.checking');
     try {
       const { text } = await fetchText(url);
       let res = parseFeed(text, url);
@@ -249,11 +249,11 @@ async function addFeed() {
         if (!(await hasAccess(url))) await requestAccess(url);
         res = parseFeed((await fetchText(url)).text, url);
       }
-      if (!res.items) return openDialog({ title: 'No feed found', message: 'This address is not an RSS/Atom feed and the page does not link to one.', okText: 'OK' });
+      if (!res.items) return openDialog({ title: t('news.noFeed'), message: t('news.noFeedMsg'), okText: t('common.ok') });
       title = res.title;
       feedCache[url] = { at: Date.now(), title: res.title, items: res.items };
     } catch (e) {
-      return openDialog({ title: 'Could not load feed', message: String(e.message || e), okText: 'OK' });
+      return openDialog({ title: t('news.loadFeedFail'), message: String(e.message || e), okText: t('common.ok') });
     }
   }
   feeds.push({ url, title });

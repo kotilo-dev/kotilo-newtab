@@ -15,18 +15,18 @@ const RATE_URLS = (base, ver) => [
   `https://${ver}.currency-api.pages.dev/v1/currencies/${base}.min.json`, // belgelenmiş yedek adres
 ];
 const OZ_G = 31.1034768;
-const METALS = [['xau', 'Gold'], ['xag', 'Silver'], ['xpt', 'Platinum'], ['xpd', 'Palladium']];
+const METALS = [['xau', t('metal.xau')], ['xag', t('metal.xag')], ['xpt', t('metal.xpt')], ['xpd', t('metal.xpd')]];
 const CRYPTO = [['btc', 'Bitcoin'], ['eth', 'Ethereum'], ['sol', 'Solana'], ['xrp', 'XRP'], ['bnb', 'BNB'], ['ada', 'Cardano'], ['doge', 'Dogecoin'], ['ltc', 'Litecoin'], ['dot', 'Polkadot'], ['trx', 'TRON']];
 const NAME = Object.fromEntries([...METALS, ...CRYPTO]);
 const TABS = ['fx', 'metals', 'crypto', 'stocks', 'funds'];
 let mktTab = 'fx';
 
-const fmtNum = (n, d = 2) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtNum = (n, d = 2) => Number(n).toLocaleString(NUM_LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d });
 function digits(v) { const a = Math.abs(v); return a >= 1000 ? 0 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6; }
 function fmtMoney(v, cur) {
   if (v == null || !isFinite(v)) return '—';
   const d = digits(v);
-  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur.toUpperCase(), currencyDisplay: 'narrowSymbol', minimumFractionDigits: d, maximumFractionDigits: d }).format(v); }
+  try { return new Intl.NumberFormat(NUM_LOCALE, { style: 'currency', currency: cur.toUpperCase(), currencyDisplay: 'narrowSymbol', minimumFractionDigits: d, maximumFractionDigits: d }).format(v); }
   catch { return fmtNum(v, d) + ' ' + cur.toUpperCase(); }
 }
 const pctText = (p) => (p == null || !isFinite(p) ? '' : (p > 0 ? '▲ ' : p < 0 ? '▼ ' : '') + fmtNum(Math.abs(p)) + '%');
@@ -84,13 +84,13 @@ const qKey = (item) => (item.src === 'tefas' ? 'tefas:' : 'fh:') + item.s;
 
 async function fetchFinnhub(sym) {
   const key = mk().finnhubKey;
-  if (!key) throw new Error('No API key');
+  if (!key) throw new Error(t('mkt.err.noKey'));
   const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(key)}`);
-  if (r.status === 401 || r.status === 403) throw new Error('API key rejected or symbol not in your plan');
-  if (r.status === 429) throw new Error('Rate limit reached, try again in a minute');
+  if (r.status === 401 || r.status === 403) throw new Error(t('mkt.err.rejected'));
+  if (r.status === 429) throw new Error(t('mkt.err.rate'));
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const j = await r.json();
-  if (!j || !j.c) throw new Error('No price (symbol not found or not covered)');
+  if (!j || !j.c) throw new Error(t('mkt.err.noPrice'));
   return { price: j.c, prev: j.pc || null, cur: 'usd', time: j.t ? j.t * 1000 : null };
 }
 // TEFAS'ın eski JSON ucu kapandı (2026-11: "Method not found"); fon sayfası sunucuda üretilirken
@@ -99,9 +99,9 @@ async function fetchTefas(code) {
   const r = await fetch(`https://www.tefas.gov.tr/tr/fon-detayli-analiz/${encodeURIComponent(code)}`);
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const html = (await r.text()).replace(/\\"/g, '"');
-  if (/<title>Request Rejected<\/title>/i.test(html)) throw new Error('TEFAS rejected the request (firewall)');
+  if (/<title>Request Rejected<\/title>/i.test(html)) throw new Error(t('mkt.err.tefasRejected'));
   const price = html.match(/"sonFiyat":(-?[\d.]+)/);
-  if (!price) throw new Error('Fund not found on TEFAS');
+  if (!price) throw new Error(t('mkt.err.fundNotFound'));
   const ret = html.match(/"gunlukGetiri":(-?[\d.]+)/);
   const name = [...html.matchAll(/"fonUnvan":"([^"]{2,200})"/g)].map((m) => m[1]).find((t) => t !== 'Fon Adı');
   const p = parseFloat(price[1]);
@@ -133,28 +133,28 @@ function row({ name, sub, value, pct, href, tip, err }) {
     : el('div', { class: 'mkt-row' + (err ? ' err' : ''), title: tip || '' }, ...children);
 }
 const muted = (text, ...extra) => el('div', { class: 'muted mkt-empty' }, text, ...extra);
-function settingsLink(tab, text = 'Settings') {
+function settingsLink(tab, text = t('common.settings')) {
   const b = el('button', { class: 'link-btn', text });
   b.addEventListener('click', () => { toggleSettings(true); setMwTab(tab); $('mwTabs').scrollIntoView({ block: 'center' }); });
   return b;
 }
 function ratesFooter() {
   if (!rates) return '';
-  return `currency-api · daily · ${rates.date}` + (rates.err ? ' · offline' : '');
+  return t('mkt.ratesFooter', { date: rates.date }) + (rates.err ? ' · ' + t('mkt.offline') : '');
 }
 
 function renderFx() {
   const b = base();
-  if (!rates || !rates.cur) { $('market').replaceChildren(muted('Rates unavailable (check your network connection).')); $('mktTime').textContent = ''; return; }
+  if (!rates || !rates.cur) { $('market').replaceChildren(muted(t('mkt.unavailable'))); $('mktTime').textContent = ''; return; }
   const list = mk().fx.filter((c) => c !== b && rates.cur[c]);
   $('market').replaceChildren(...(list.length ? list.map((c) => {
     const v = valueOf(rates.cur, c), unit = v < 0.001 ? 10000 : v < 0.1 ? 100 : 1; // değeri çok küçük olanlar 100 ya da 10.000 birim için
     const C = c.toUpperCase();
     return row({
-      name: C, sub: (unit > 1 ? unit.toLocaleString('en-US') + ' ' : '') + (currencyNames.of(C) || ''), value: fmtMoney(v * unit, b), pct: changeOf(c),
-      tip: `${unit.toLocaleString('en-US')} ${C} = ${fmtMoney(v * unit, b)}`,
+      name: C, sub: (unit > 1 ? unit.toLocaleString(NUM_LOCALE) + ' ' : '') + (currencyNames.of(C) || ''), value: fmtMoney(v * unit, b), pct: changeOf(c),
+      tip: `${unit.toLocaleString(NUM_LOCALE)} ${C} = ${fmtMoney(v * unit, b)}`,
     });
-  }) : [muted('No currencies selected. ', settingsLink('fx', 'Add some'))]));
+  }) : [muted(t('mkt.noCur'), settingsLink('fx', t('mkt.addSome')))]));
   renderConvOptions();
   convert();
   $('mktTime').textContent = ratesFooter();
@@ -164,22 +164,22 @@ function renderMetals() {
   const items = mk().metals.filter((c) => NAME[c]);
   $('mktList').replaceChildren(...(items.length ? items.map((c) => {
     const oz = valueOf(rates && rates.cur, c);
-    return row({ name: NAME[c], sub: 'per ' + (unit === 'g' ? 'gram' : 'oz'), value: oz == null ? '—' : fmtMoney(unit === 'g' ? oz / OZ_G : oz, b), pct: changeOf(c) });
-  }) : [muted('Nothing selected. ', settingsLink('metals', 'Choose metals'))]));
+    return row({ name: NAME[c], sub: unit === 'g' ? t('mkt.perGram') : t('mkt.perOz'), value: oz == null ? '—' : fmtMoney(unit === 'g' ? oz / OZ_G : oz, b), pct: changeOf(c) });
+  }) : [muted(t('mkt.nothingSel'), settingsLink('metals', t('mkt.chooseMetals')))]));
   $('mktTime').textContent = ratesFooter();
 }
 function renderCrypto() {
   const b = base();
   const items = mk().crypto.filter((c) => NAME[c]);
   $('mktList').replaceChildren(...(items.length ? items.map((c) => row({ name: NAME[c], sub: c.toUpperCase(), value: fmtMoney(valueOf(rates && rates.cur, c), b), pct: changeOf(c) }))
-    : [muted('Nothing selected. ', settingsLink('crypto', 'Choose coins'))]));
+    : [muted(t('mkt.nothingSel'), settingsLink('crypto', t('mkt.chooseCoins')))]));
   $('mktTime').textContent = ratesFooter();
 }
 function quoteRow(item) {
   const q = quotes[qKey(item)] || {};
   const pct = q.price != null && q.prev ? (q.price - q.prev) / q.prev * 100 : null;
   const href = item.src === 'tefas' ? `https://www.tefas.gov.tr/tr/fon-detayli-analiz/${encodeURIComponent(item.s)}` : null;
-  const tip = [q.name || item.d || item.s, q.time ? 'as of ' + new Date(q.time).toLocaleString() : '', q.err ? 'Error: ' + q.err : ''].filter(Boolean).join('\n');
+  const tip = [q.name || item.d || item.s, q.time ? t('mkt.asOf', { date: new Date(q.time).toLocaleString(LOCALE) }) : '', q.err ? t('mkt.errorPrefix', { err: q.err }) : ''].filter(Boolean).join('\n');
   return row({
     name: item.n || item.s, sub: item.src === 'tefas' ? 'TEFAS' : '', href, tip,
     value: q.price == null ? (q.err ? '!' : '…') : fmtMoney(q.price, q.cur || 'usd'), pct, err: q.err && q.price == null,
@@ -187,10 +187,10 @@ function quoteRow(item) {
 }
 function renderQuotes(tab) {
   const items = mk()[tab] || [];
-  $('mktList').replaceChildren(...(items.length ? items.map(quoteRow) : [muted('Nothing to watch yet. ', settingsLink(tab, 'Add in Settings'))]));
+  $('mktList').replaceChildren(...(items.length ? items.map(quoteRow) : [muted(t('mkt.nothingWatch'), settingsLink(tab, t('mkt.addInSettings')))]));
   const ats = items.map((i) => quotes[qKey(i)] && quotes[qKey(i)].at).filter(Boolean);
   const src = tab === 'stocks' ? 'Finnhub' : 'TEFAS';
-  $('mktTime').textContent = items.length ? src + (ats.length ? ` · checked ${fmtTime.format(new Date(Math.min(...ats)))}` : '') : '';
+  $('mktTime').textContent = items.length ? src + (ats.length ? ` · ${t('mkt.checked', { time: fmtTime.format(new Date(Math.min(...ats))) })}` : '') : '';
 }
 
 function render() {
@@ -277,9 +277,9 @@ for (const b of document.querySelectorAll('#mwTabs button')) b.addEventListener(
 const saveMarkets = () => saveSettings();
 function moveItem(arr, i, d) { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; saveMarkets(); }
 function listItem(label, sub, arr, i) {
-  const up = el('button', { class: 'link-btn', title: 'Move up', 'aria-label': 'Move ' + label + ' up', text: '↑' });
+  const up = el('button', { class: 'link-btn', title: t('common.moveUp'), 'aria-label': t('common.moveUpX', { name: label }), text: '↑' });
   up.addEventListener('click', () => moveItem(arr, i, -1));
-  const del = el('button', { class: 'link-btn', title: 'Remove', 'aria-label': 'Remove ' + label, text: '✕' });
+  const del = el('button', { class: 'link-btn', title: t('common.remove'), 'aria-label': t('common.removeX', { name: label }), text: '✕' });
   del.addEventListener('click', () => { arr.splice(i, 1); saveMarkets(); });
   return el('li', {}, el('span', { text: label }), el('small', { text: sub }), i ? up : null, del);
 }
@@ -309,18 +309,18 @@ function renderWatchlist() {
   const intro = (...c) => $('mwIntro').replaceChildren(...c);
 
   if (mwTab === 'fx') {
-    intro(`Prices in ${base().toUpperCase()} (change it under Region and units). Daily rates from currency-api.`);
+    intro(t('mkt.introFx', { cur: base().toUpperCase() }));
     $('mwList').replaceChildren(...m.fx.map((c, i) => listItem(c.toUpperCase(), currencyNames.of(c.toUpperCase()) || '', m.fx, i)));
-    if (!m.fx.length) $('mwList').replaceChildren(el('li', { class: 'muted', text: 'No currencies.' }));
+    if (!m.fx.length) $('mwList').replaceChildren(el('li', { class: 'muted', text: t('mkt.noCurrencies') }));
     const options = currencyCodes().filter((c) => !m.fx.includes(c) && c !== base());
-    $('mwPick').replaceChildren(el('option', { value: '', text: '+ Add a currency…' }), ...options.map((c) => el('option', { value: c, text: currencyLabel(c) })));
+    $('mwPick').replaceChildren(el('option', { value: '', text: t('mkt.addCurrency') }), ...options.map((c) => el('option', { value: c, text: currencyLabel(c) })));
     showForm(true, false);
     return;
   }
   if (mwTab === 'metals') {
-    intro('Spot prices in your currency.');
-    const unit = el('div', { class: 'seg mw-unit', role: 'group', 'aria-label': 'Unit' }, ...[['oz', 'Troy ounce'], ['g', 'Gram']].map(([u, t]) => {
-      const b = el('button', { type: 'button', text: t, 'aria-pressed': String(m.metalUnit === u) });
+    intro(t('mkt.introMetals'));
+    const unit = el('div', { class: 'seg mw-unit', role: 'group', 'aria-label': t('mkt.unit') }, ...[['oz', t('mkt.troyOz')], ['g', t('mkt.gram')]].map(([u, label]) => {
+      const b = el('button', { type: 'button', text: label, 'aria-pressed': String(m.metalUnit === u) });
       b.addEventListener('click', () => { m.metalUnit = u; saveMarkets(); });
       return b;
     }));
@@ -329,42 +329,42 @@ function renderWatchlist() {
     return;
   }
   if (mwTab === 'crypto') {
-    intro('Daily prices in your currency.');
+    intro(t('mkt.introCrypto'));
     $('mwList').replaceChildren(...checklist(CRYPTO, 'crypto'));
     showForm(false, false);
     return;
   }
   if (mwTab === 'stocks') {
     if (!m.finnhubKey) {
-      const input = el('input', { type: 'password', placeholder: 'Finnhub API key', 'aria-label': 'Finnhub API key', autocomplete: 'off' });
-      const form = el('form', { class: 'clock-form' }, input, el('button', { class: 'btn', type: 'submit', text: 'Save' }));
+      const input = el('input', { type: 'password', placeholder: t('mkt.finnhubKey'), 'aria-label': t('mkt.finnhubKey'), autocomplete: 'off' });
+      const form = el('form', { class: 'clock-form' }, input, el('button', { class: 'btn', type: 'submit', text: t('common.save') }));
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const key = input.value.trim();
         if (!key) return;
         // İzin penceresi kullanıcı tıklamasının içinde açılmalı: önce izin, sonra ağ isteği.
         requestAccess('https://finnhub.io/').then(async (ok) => {
-          if (!ok) { $('mwState').textContent = 'Permission to access finnhub.io was not granted.'; return; }
-          $('mwState').textContent = 'Checking…';
+          if (!ok) { $('mwState').textContent = t('mkt.permFinnhub'); return; }
+          $('mwState').textContent = t('common.checking');
           try {
             const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${encodeURIComponent(key)}`);
-            if (!r.ok) throw new Error(r.status === 401 ? 'Key rejected.' : 'HTTP ' + r.status);
+            if (!r.ok) throw new Error(r.status === 401 ? t('mkt.err.keyRejected') : 'HTTP ' + r.status);
             m.finnhubKey = key; saveMarkets();
           } catch (err) { $('mwState').textContent = String(err.message || err); }
         });
       });
-      intro('US stocks and ETFs need a free API key from ', el('a', { href: 'https://finnhub.io/register', text: 'finnhub.io' }),
-        '. The key is stored in your browser settings and sent only to Finnhub.');
+      intro(t('mkt.introStocksKey1'), el('a', { href: 'https://finnhub.io/register', text: 'finnhub.io' }),
+        t('mkt.introStocksKey2'));
       $('mwList').replaceChildren(el('li', {}, form));
       showForm(false, false);
       return;
     }
-    const remove = el('button', { class: 'link-btn', text: 'Remove API key' });
+    const remove = el('button', { class: 'link-btn', text: t('mkt.removeKey') });
     remove.addEventListener('click', () => { m.finnhubKey = ''; saveMarkets(); });
-    intro('US stocks and ETFs via Finnhub. ', remove);
+    intro(t('mkt.introStocks'), remove);
     $('mwList').replaceChildren(...m.stocks.map((it, i) => listItem(it.n, it.d || '', m.stocks, i)));
-    if (!m.stocks.length) $('mwList').replaceChildren(el('li', { class: 'muted', text: 'Empty. Search below to add.' }));
-    $('mwInput').placeholder = 'Search a US stock or ETF (e.g. AAPL)';
+    if (!m.stocks.length) $('mwList').replaceChildren(el('li', { class: 'muted', text: t('mkt.emptySearch') }));
+    $('mwInput').placeholder = t('mkt.stockPh');
     showForm(false, true);
     return;
   }
@@ -374,14 +374,14 @@ function renderWatchlist() {
   cb.addEventListener('change', () => {
     if (!cb.checked) { m.tefas = false; saveMarkets(); return; }
     requestAccess('https://www.tefas.gov.tr/').then((ok) => {
-      if (!ok) { cb.checked = false; $('mwState').textContent = 'Permission to access tefas.gov.tr was not granted.'; return; }
+      if (!ok) { cb.checked = false; $('mwState').textContent = t('mkt.permTefas'); return; }
       m.tefas = true; saveMarkets();
     });
   });
-  intro('Regional fund sources. Off by default.');
-  const toggle = el('li', {}, el('label', { class: 'set-toggle mw-check' }, cb, el('span', { text: 'Turkey — TEFAS funds' }), el('small', { text: 'tefas.gov.tr' })));
+  intro(t('mkt.introFunds'));
+  const toggle = el('li', {}, el('label', { class: 'set-toggle mw-check' }, cb, el('span', { text: t('mkt.tefas') }), el('small', { text: 'tefas.gov.tr' })));
   $('mwList').replaceChildren(toggle, ...(m.tefas ? m.funds.map((it, i) => listItem(it.n, 'TEFAS', m.funds, i)) : []));
-  $('mwInput').placeholder = 'TEFAS fund code (e.g. TTE)';
+  $('mwInput').placeholder = t('mkt.tefasPh');
   showForm(false, !!m.tefas);
 }
 
@@ -402,24 +402,24 @@ async function searchMw() {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     out = ((await r.json()).result || []).filter((x) => x.symbol && !x.symbol.includes('.')).slice(0, 8)
       .map((x) => ({ s: x.symbol, d: x.description, label: x.symbol, sub: `${x.description || ''} · ${x.type || ''}` }));
-  } catch (e) { console.warn('[new-tab] search', e); if (seq === mwSeq) $('mwState').textContent = 'Search failed.'; }
+  } catch (e) { console.warn('[new-tab] search', e); if (seq === mwSeq) $('mwState').textContent = t('mkt.searchFailed'); }
   if (seq !== mwSeq) return;
   mwResults = out;
   $('mwSuggest').replaceChildren(...out.map((o, i) => el('li', { role: 'option', 'data-i': i }, el('b', { text: o.label }), el('small', { text: o.sub }))));
-  if (!out.length) $('mwSuggest').replaceChildren(el('li', { class: 'muted', text: 'No match. Press Enter to add the symbol as typed.' }));
+  if (!out.length) $('mwSuggest').replaceChildren(el('li', { class: 'muted', text: t('mkt.noMatch') }));
   $('mwSuggest').hidden = false;
 }
 $('mwInput').addEventListener('input', () => { clearTimeout(mwTimer); mwTimer = setTimeout(searchMw, 300); });
 
 async function addQuoteItem(item) {
   const list = mk()[mwTab];
-  if (list.some((x) => qKey(x) === qKey(item))) { $('mwState').textContent = 'Already in the list.'; return; }
-  $('mwState').textContent = 'Checking…';
+  if (list.some((x) => qKey(x) === qKey(item))) { $('mwState').textContent = t('mkt.already'); return; }
+  $('mwState').textContent = t('common.checking');
   const q = await getQuote(item, true);
-  if (q.price == null) { $('mwState').textContent = (q.err || 'No price') + ' — not added.'; delete quotes[qKey(item)]; return; }
+  if (q.price == null) { $('mwState').textContent = t('mkt.notAdded', { err: q.err || t('mkt.noPriceShort') }); delete quotes[qKey(item)]; return; }
   list.push(item);
   $('mwInput').value = '';
-  $('mwState').textContent = `Added ${item.n}.`;
+  $('mwState').textContent = t('mkt.added', { name: item.n });
   store.set('quotes', quotes);
   saveMarkets();
 }

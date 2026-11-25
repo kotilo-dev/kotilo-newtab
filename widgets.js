@@ -19,7 +19,7 @@ const syncStore = {
   },
 };
 const todayKey = () => new Date().toLocaleDateString('sv'); // YYYY-MM-DD (yerel saat)
-const fmtTime = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' });
+const fmtTime = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' });
 
 /* =========================================================
    Günün sözü — BrainyQuote'un resmî günün sözü RSS akışı; ulaşılamazsa aşağıdaki yerel liste.
@@ -73,7 +73,7 @@ function renderQuote() {
   const q = list[quoteOffset % list.length];
   const remote = quoteSrc && quoteOffset % list.length < quoteList.length;
   $('quote').replaceChildren('“' + q.text + '”', q.who ? el('cite', { text: '— ' + q.who }) : '');
-  $('quote').title = (remote ? (quoteOffset % list.length === 0 ? 'Quote of the day · ' : '') + quoteSrc.name : 'Offline quote list') + ' — click for another';
+  $('quote').title = (remote ? (quoteOffset % list.length === 0 ? t('quote.otd') + ' · ' : '') + quoteSrc.name : t('quote.offline')) + t('quote.more');
 }
 async function loadQuote() {
   const cache = await store.get('qotd', null);
@@ -139,15 +139,15 @@ let todos = []; // [{id, text, done}]
 function saveTodos() { syncStore.set('todos', todos); renderTodos(); }
 function renderTodos() {
   const ul = $('todos');
-  if (!todos.length) { ul.replaceChildren(el('li', { class: 'empty', text: 'Nothing here yet. Type below and press Enter.' })); }
+  if (!todos.length) { ul.replaceChildren(el('li', { class: 'empty', text: t('todo.empty') })); }
   else {
-    ul.replaceChildren(...todos.map((t) => {
-      const cb = el('input', { type: 'checkbox', 'aria-label': 'Done' });
-      cb.checked = t.done;
-      cb.addEventListener('change', () => { t.done = cb.checked; saveTodos(); });
-      const del = el('button', { title: 'Delete', 'aria-label': 'Delete', text: '✕' });
-      del.addEventListener('click', () => { todos = todos.filter((x) => x !== t); saveTodos(); });
-      return el('li', { class: t.done ? 'done' : null }, cb, el('span', { text: t.text }), del);
+    ul.replaceChildren(...todos.map((td) => {
+      const cb = el('input', { type: 'checkbox', 'aria-label': t('common.done') });
+      cb.checked = td.done;
+      cb.addEventListener('change', () => { td.done = cb.checked; saveTodos(); });
+      const del = el('button', { title: t('common.delete'), 'aria-label': t('common.delete'), text: '✕' });
+      del.addEventListener('click', () => { todos = todos.filter((x) => x !== td); saveTodos(); });
+      return el('li', { class: td.done ? 'done' : null }, cb, el('span', { text: td.text }), del);
     }));
   }
   $('todoClear').hidden = !todos.some((t) => t.done);
@@ -167,11 +167,11 @@ $('todoClear').addEventListener('click', () => { todos = todos.filter((t) => !t.
    ========================================================= */
 let noteTimer;
 $('note').addEventListener('input', () => {
-  $('noteState').textContent = 'Typing…';
+  $('noteState').textContent = t('notes.typing');
   clearTimeout(noteTimer);
   noteTimer = setTimeout(async () => {
     await store.set('note', $('note').value);
-    $('noteState').textContent = 'Saved ' + fmtTime.format(new Date());
+    $('noteState').textContent = t('notes.saved', { time: fmtTime.format(new Date()) });
   }, 500);
 });
 
@@ -194,7 +194,7 @@ function setSideTab(tab) {
   }
   // ＋: yer imlerinde yer imi/klasör, haberlerde RSS kaynağı ekler; diğer sekmelerde gizli.
   $('sideAdd').style.visibility = sideTab === 'bm' || sideTab === 'news' ? '' : 'hidden';
-  $('sideAdd').title = sideTab === 'news' ? 'Add RSS feed' : 'Add bookmark or folder';
+  $('sideAdd').title = sideTab === 'news' ? t('news.addFeed') : t('side.add');
   $('side').scrollTop = 0;
   if (sideTab === 'closed') renderClosed();
   if (sideTab === 'top') renderTop();
@@ -213,28 +213,28 @@ $('sideTabs').addEventListener('keydown', (e) => {
 
 async function renderClosed() {
   const box = $('closedList');
-  if (!isExt || !ext.sessions) { box.replaceChildren(emptyRow('This section only works inside the extension.')); return; }
+  if (!isExt || !ext.sessions) { box.replaceChildren(emptyRow(t('side.extOnly'))); return; }
   const list = await ext.sessions.getRecentlyClosed({ maxResults: 25 });
-  if (!list.length) { box.replaceChildren(emptyRow('No recently closed tabs.')); return; }
+  if (!list.length) { box.replaceChildren(emptyRow(t('closed.none'))); return; }
   // "tabs" izni yoksa Chrome başlık ve adres vermez; kullanıcıya nasıl düzelteceğini söyle.
   const hasTabs = ext.permissions ? await ext.permissions.contains({ permissions: ['tabs'] }) : true;
-  const hint = hasTabs ? null : el('div', { class: 'side-empty hint', text: 'Titles need the “tabs” permission: open chrome://extensions and press ↻ (reload) on this extension.' });
-  const label = (t) => (t && (t.title || (t.url && hostOf(t.url)))) || 'Closed tab';
-  const icon = (t) => (t && t.url ? favImg(t.url) : el('span', { class: 'fav', text: '🗋' }));
+  const hint = hasTabs ? null : el('div', { class: 'side-empty hint', text: t('closed.tabsPerm') });
+  const label = (x) => (x && (x.title || (x.url && hostOf(x.url)))) || t('closed.tab');
+  const icon = (x) => (x && x.url ? favImg(x.url) : el('span', { class: 'fav', text: '🗋' }));
   box.replaceChildren(...[hint].filter(Boolean), ...list.map((s) => {
     const ms = s.lastModified > 1e12 ? s.lastModified : s.lastModified * 1000; // Firefox: milisaniye, Chrome: saniye
     const ago = s.lastModified ? fmtTime.format(new Date(ms)) : '';
     let btn;
     if (s.tab) {
-      btn = el('button', { class: 'side-item', title: [s.tab.title, s.tab.url].filter(Boolean).join('\n') || 'Restore tab' },
+      btn = el('button', { class: 'side-item', title: [s.tab.title, s.tab.url].filter(Boolean).join('\n') || t('closed.restoreTab') },
         icon(s.tab), el('span', { class: 'name', text: label(s.tab) }), el('small', { text: ago }));
     } else if (s.window) {
       const tabs = s.window.tabs || [];
       const n = tabs.length;
       // Satırda ilk sekmenin adı, sağda sekme sayısı; tüm sekmeler fareyle üzerine gelince görünür.
-      btn = el('button', { class: 'side-item', title: 'Restore window:\n' + tabs.map(label).join('\n') },
+      btn = el('button', { class: 'side-item', title: t('closed.restoreWindow') + '\n' + tabs.map(label).join('\n') },
         el('span', { class: 'fav', text: '🗗' }), el('span', { class: 'name', text: label(tabs[0]) }),
-        el('small', { text: `${n} ${n === 1 ? 'tab' : 'tabs'} · ${ago}` }));
+        el('small', { text: `${tn('closed.tabs', n)} · ${ago}` }));
     } else return null;
     const id = (s.tab || s.window).sessionId;
     btn.addEventListener('click', () => ext.sessions.restore(id));
@@ -244,9 +244,9 @@ async function renderClosed() {
 
 async function renderTop() {
   const box = $('topList');
-  if (!isExt || !ext.topSites) { box.replaceChildren(emptyRow('This section only works inside the extension.')); return; }
+  if (!isExt || !ext.topSites) { box.replaceChildren(emptyRow(t('side.extOnly'))); return; }
   const sites = (await ext.topSites.get()).slice(0, 20);
-  if (!sites.length) { box.replaceChildren(emptyRow('Not enough browsing history yet.')); return; }
+  if (!sites.length) { box.replaceChildren(emptyRow(t('top.none'))); return; }
   box.replaceChildren(...sites.map((s) => el('a', { class: 'side-item', href: s.url, title: s.url },
     favImg(s.url), el('span', { class: 'name', text: s.title || hostOf(s.url) }))));
 }
@@ -367,7 +367,7 @@ async function loadPhoto() {
   const mode = await getBgMode();
   if (gen !== bgGen) return;
   const credit = $('credit');
-  const btn = el('button', { text: '🖼 Background' });
+  const btn = el('button', { text: t('bg.btn') });
   btn.addEventListener('click', toggleBgPanel);
 
   if (mode === 'off') { hideBg(); credit.replaceChildren(btn); return; }
@@ -376,7 +376,7 @@ async function loadPhoto() {
     const list = await wpAll().catch(() => []);
     const pin = await store.get('bgPick', null);
     if (gen !== bgGen) return;
-    if (!list.length) { hideBg(); credit.replaceChildren(el('span', { text: 'No wallpapers added yet.' }), btn); return; }
+    if (!list.length) { hideBg(); credit.replaceChildren(el('span', { text: t('bg.none') }), btn); return; }
     let pick = list.find((w) => w.id === pin);
     if (!pick) { // sabit seçim yoksa her yeni sekmede farklı bir fotoğraf (bir öncekinin aynısı gelmez)
       const last = await store.get('bgLast', null);
@@ -409,24 +409,24 @@ async function renderBgPanel() {
     const isVideo = w.kind === 'video';
     const thumb = isVideo ? w.poster : w.blob; // video için yakalanan kare
     const u = thumb ? URL.createObjectURL(thumb) : ''; if (u) thumbUrls.push(u);
-    const del = el('span', { class: 'wp-del', role: 'button', title: 'Delete', 'aria-label': 'Delete', text: '✕' });
+    const del = el('span', { class: 'wp-del', role: 'button', title: t('common.delete'), 'aria-label': t('common.delete'), text: '✕' });
     del.addEventListener('click', async (e) => {
       e.stopPropagation();
       await wpDel(w.id);
       if (validPin === w.id) await store.set('bgPick', null);
       renderBgPanel(); loadPhoto();
     });
-    const tile = el('button', { class: 'wp' + (validPin === w.id ? ' active' : '') + (isVideo ? ' is-video' : ''), title: (validPin === w.id ? 'Pinned — click again to unpin' : 'Pin this wallpaper') + (isVideo ? ' (live)' : '') },
-      u ? el('img', { src: u, alt: '' }) : null, isVideo ? el('span', { class: 'wp-badge', text: '▶ Live' }) : null, del);
+    const tile = el('button', { class: 'wp' + (validPin === w.id ? ' active' : '') + (isVideo ? ' is-video' : ''), title: (validPin === w.id ? t('bg.pinned') : t('bg.pin')) + (isVideo ? t('bg.live') : '') },
+      u ? el('img', { src: u, alt: '' }) : null, isVideo ? el('span', { class: 'wp-badge', text: t('bg.badge') }) : null, del);
     tile.addEventListener('click', async () => {
       await store.set('bgPick', validPin === w.id ? null : w.id); // aynı fotoğrafa tekrar tıklamak sabitlemeyi kaldırır
       renderBgPanel(); loadPhoto();
     });
     return tile;
   }));
-  $('wpState').textContent = !list.length ? 'Add photos or videos (MP4/WebM), or drag and drop them onto the page.'
-    : validPin ? 'The selected wallpaper is pinned. Click it again to rotate on every new tab.'
-    : `${list.length} ${list.length === 1 ? 'wallpaper' : 'wallpapers'} · changes on every new tab. Click one to pin it.`;
+  $('wpState').textContent = !list.length ? t('bg.help')
+    : validPin ? t('bg.pinnedState')
+    : tn('bg.count', list.length);
 }
 function toggleBgPanel() {
   const p = $('bgPanel'); p.hidden = !p.hidden;
@@ -443,17 +443,17 @@ async function addWallpapers(files) {
   const all = [...files].filter((f) => /^(image|video)\//.test(f.type));
   if (!all.length) return;
   $('bgPanel').hidden = false;
-  $('wpState').textContent = 'Adding…';
+  $('wpState').textContent = t('bg.adding');
   const skipped = [];
   let lastId = null;
   for (const f of all) {
     try {
       if (f.type.startsWith('video/')) {
         // Video yeniden kodlanmaz, olduğu gibi saklanır; tarayıcının oynatamadığı biçimler (örn. bazı MKV/HEVC) eklenmez.
-        if (f.size > MAX_VIDEO_MB * 1048576) { skipped.push(`${f.name} (over ${MAX_VIDEO_MB} MB)`); continue; }
-        if (!document.createElement('video').canPlayType(f.type)) { skipped.push(`${f.name} (format not supported)`); continue; }
+        if (f.size > MAX_VIDEO_MB * 1048576) { skipped.push(t('bg.tooBig', { name: f.name, mb: MAX_VIDEO_MB })); continue; }
+        if (!document.createElement('video').canPlayType(f.type)) { skipped.push(t('bg.badFormat', { name: f.name })); continue; }
         const poster = await videoPoster(f);
-        if (!poster) { skipped.push(`${f.name} (could not be decoded)`); continue; }
+        if (!poster) { skipped.push(t('bg.badDecode', { name: f.name })); continue; }
         lastId = await wpAdd({ blob: f, kind: 'video', poster });
       } else {
         lastId = await wpAdd({ blob: await prepImage(f), kind: 'image' });
@@ -464,7 +464,7 @@ async function addWallpapers(files) {
   if (all.length === 1 && lastId != null) await store.set('bgPick', lastId);
   await store.set('bgMode', 'own');
   await renderBgPanel(); loadPhoto();
-  if (skipped.length) $('wpState').textContent = 'Not added: ' + skipped.join(', ');
+  if (skipped.length) $('wpState').textContent = t('bg.notAdded', { list: skipped.join(', ') });
 }
 $('wpFile').addEventListener('change', (e) => { addWallpapers(e.target.files); e.target.value = ''; });
 

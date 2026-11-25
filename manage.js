@@ -10,12 +10,12 @@ const canManage = isExt && !!ext.bookmarks;
    Sayfanın kendi penceresi (dialog)
    --------------------------------------------------------- */
 // fields: [{key, label, value, placeholder}]; danger: kırmızı onay düğmesi. Sonuç: değerler nesnesi ya da null (vazgeçildi).
-function openDialog({ title, message, fields = [], okText = 'Save', danger = false }) {
+function openDialog({ title, message, fields = [], okText = t('common.save'), danger = false }) {
   return new Promise((resolve) => {
     const dlg = $('dlg');
     const inputs = fields.map((f) => el('input', { id: 'dlg-' + f.key, value: f.value || '', placeholder: f.placeholder || '', autocomplete: 'off', spellcheck: 'false' }));
     const ok = el('button', { type: 'submit', class: 'btn ' + (danger ? 'btn-danger' : 'btn-primary'), text: okText });
-    const cancel = el('button', { type: 'button', class: 'btn', text: 'Cancel' });
+    const cancel = el('button', { type: 'button', class: 'btn', text: t('common.cancel') });
     const form = el('form', { class: 'dlg-box', method: 'dialog' },
       el('h3', { text: title }),
       message ? el('p', { class: 'dlg-msg', text: message }) : null,
@@ -47,37 +47,37 @@ function normalizeUrl(u) {
    İşlemler
    --------------------------------------------------------- */
 async function addBookmark(parentId) {
-  const v = await openDialog({ title: 'Add bookmark', fields: [
-    { key: 'title', label: 'Name', placeholder: 'e.g. Wikipedia' },
-    { key: 'url', label: 'URL', placeholder: 'https://…' }] });
+  const v = await openDialog({ title: t('dlg.addBookmark'), fields: [
+    { key: 'title', label: t('dlg.name'), placeholder: t('dlg.namePh') },
+    { key: 'url', label: t('dlg.url'), placeholder: 'https://…' }] });
   if (!v) return;
   const url = normalizeUrl(v.url);
-  if (!url) return openDialog({ title: 'Invalid URL', message: 'Please enter a valid web address.', okText: 'OK' });
+  if (!url) return openDialog({ title: t('dlg.invalidUrl'), message: t('dlg.invalidUrlMsg'), okText: t('common.ok') });
   await ext.bookmarks.create({ parentId, title: v.title || hostOf(url), url });
 }
 async function addFolder(parentId) {
-  const v = await openDialog({ title: 'New folder', fields: [{ key: 'title', label: 'Name', placeholder: 'Folder name' }], okText: 'Create' });
+  const v = await openDialog({ title: t('dlg.newFolder'), fields: [{ key: 'title', label: t('dlg.name'), placeholder: t('dlg.folderPh') }], okText: t('common.create') });
   if (!v || !v.title) return;
   await ext.bookmarks.create({ parentId, title: v.title });
 }
 async function editNode(n) {
-  const fields = [{ key: 'title', label: 'Name', value: n.title }];
-  if (n.url) fields.push({ key: 'url', label: 'URL', value: n.url });
-  const v = await openDialog({ title: n.url ? 'Edit bookmark' : 'Rename folder', fields });
+  const fields = [{ key: 'title', label: t('dlg.name'), value: n.title }];
+  if (n.url) fields.push({ key: 'url', label: t('dlg.url'), value: n.url });
+  const v = await openDialog({ title: n.url ? t('dlg.editBookmark') : t('dlg.renameFolder'), fields });
   if (!v) return;
   const changes = { title: v.title };
   if (n.url) {
     const url = normalizeUrl(v.url);
-    if (!url) return openDialog({ title: 'Invalid URL', message: 'Please enter a valid web address.', okText: 'OK' });
+    if (!url) return openDialog({ title: t('dlg.invalidUrl'), message: t('dlg.invalidUrlMsg'), okText: t('common.ok') });
     changes.url = url;
   }
   await ext.bookmarks.update(n.id, changes);
 }
 async function deleteNode(n) {
   const count = n.url ? 0 : countLinks(n);
-  const msg = n.url ? `“${n.title || n.url}” will be removed from your bookmarks.`
-    : `The folder “${n.title}”` + (count ? ` and the ${count} ${count === 1 ? 'link' : 'links'} inside it` : '') + ' will be removed.';
-  const v = await openDialog({ title: n.url ? 'Delete bookmark?' : 'Delete folder?', message: msg + ' This cannot be undone here.', okText: 'Delete', danger: true });
+  const msg = n.url ? t('dlg.delBmMsg', { name: n.title || n.url })
+    : (count ? tn('dlg.delFolderN', count, { name: n.title }) : t('dlg.delFolder', { name: n.title }));
+  const v = await openDialog({ title: n.url ? t('dlg.delBmTitle') : t('dlg.delFolderTitle'), message: msg + ' ' + t('dlg.cannotUndo'), okText: t('common.delete'), danger: true });
   if (!v) return;
   if (n.url) await ext.bookmarks.remove(n.id); else await ext.bookmarks.removeTree(n.id);
 }
@@ -104,20 +104,20 @@ function menuFor(n) {
   const here = currentFolderId();
   const items = [];
   if (n && n.url) {
-    items.push({ label: 'Open in new tab', run: () => { trackClick(n.url); window.open(n.url, '_blank'); } });
+    items.push({ label: t('menu.openNewTab'), run: () => { trackClick(n.url); window.open(n.url, '_blank'); } });
     items.push('-');
-    items.push({ label: 'Edit…', run: () => editNode(n) });
+    items.push({ label: t('menu.edit'), run: () => editNode(n) });
   } else if (n) {
-    items.push({ label: 'Open folder', run: () => openFolder(n.id) });
+    items.push({ label: t('menu.openFolder'), run: () => openFolder(n.id) });
     const links = (n.children || []).filter((c) => c.url);
     // window.open art arda çağrılınca açılır pencere engelleyicisine takılır; ext.tabs.create takılmaz.
-    if (links.length) items.push({ label: `Open all (${links.length})`, run: () => links.forEach((c) => ext.tabs.create({ url: c.url, active: false })) });
+    if (links.length) items.push({ label: t('menu.openAll', { n: links.length }), run: () => links.forEach((c) => ext.tabs.create({ url: c.url, active: false })) });
     items.push('-');
-    items.push({ label: 'Rename…', run: () => editNode(n) });
+    items.push({ label: t('menu.rename'), run: () => editNode(n) });
   }
-  if (n) items.push({ label: 'Delete…', danger: true, run: () => deleteNode(n) }, '-');
-  items.push({ label: 'Add bookmark here…', run: () => addBookmark(here) });
-  items.push({ label: 'Add folder here…', run: () => addFolder(here) });
+  if (n) items.push({ label: t('menu.delete'), danger: true, run: () => deleteNode(n) }, '-');
+  items.push({ label: t('menu.addBmHere'), run: () => addBookmark(here) });
+  items.push({ label: t('menu.addFolderHere'), run: () => addFolder(here) });
   return items;
 }
 
@@ -133,8 +133,8 @@ if (canManage) {
     if (sideTab === 'news') return addFeed(); // News sekmesinde ＋ RSS kaynağı ekler (news.js)
     const r = e.currentTarget.getBoundingClientRect();
     openMenu(r.left, r.bottom + 4, [
-      { label: 'Add bookmark…', run: () => addBookmark(currentFolderId()) },
-      { label: 'Add folder…', run: () => addFolder(currentFolderId()) }]);
+      { label: t('menu.addBm'), run: () => addBookmark(currentFolderId()) },
+      { label: t('menu.addFolder'), run: () => addFolder(currentFolderId()) }]);
   });
 } else {
   // Yer imi API'si yoksa (önizleme) ＋ yalnızca News sekmesinde çalışır.

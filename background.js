@@ -5,7 +5,30 @@
 const ext = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
 const POMO_MIN = { focus: 25, short: 5, long: 15 };
-const LABEL = { focus: 'Focus', short: 'Short break', long: 'Long break' };
+// Arka plan localStorage'a erişemez: dil, i18n.js'in setLang ile storage.local'a yazdığı "lang" değerinden okunur
+// ('auto' ya da hiç yoksa tarayıcının arayüz dili). Sayfa metinleri i18n.js'te; burada yalnızca bildirimler var.
+const TEXT = {
+  en: {
+    focus: 'Focus', short: 'Short break', long: 'Long break',
+    finished: (label) => `${label} finished`,
+    longBreak: 'Great work — time for a long break.', shortBreak: 'Focus session done — take a short break.', backToFocus: 'Break is over — ready to focus?',
+  },
+  tr: {
+    focus: 'Odak', short: 'Kısa mola', long: 'Uzun mola',
+    finished: (label) => `${label} bitti`,
+    longBreak: 'Harika iş — uzun bir mola zamanı.', shortBreak: 'Odak oturumu bitti — kısa bir mola ver.', backToFocus: 'Mola bitti — odaklanmaya hazır mısın?',
+  },
+};
+async function notifyText() {
+  let lang = 'auto';
+  try { lang = (await ext.storage.local.get('lang')).lang || 'auto'; } catch { /* okunamazsa otomatik */ }
+  if (lang !== 'en' && lang !== 'tr') {
+    let ui = '';
+    try { ui = (ext.i18n && ext.i18n.getUILanguage()) || ''; } catch { /* yok */ }
+    lang = /^tr\b/i.test(ui) ? 'tr' : 'en';
+  }
+  return TEXT[lang];
+}
 
 function nextState(st) {
   const round = st.mode === 'focus' ? (st.round || 0) + 1 : (st.round || 0);
@@ -20,13 +43,12 @@ ext.alarms.onAlarm.addListener(async (alarm) => {
   if (!st || !st.running) return; // sayfa duraklattıysa ya da zaten geçtiyse
   const next = nextState(st);
   await ext.storage.local.set({ pomo: next });
-  const msg = st.mode === 'focus'
-    ? (next.mode === 'long' ? 'Great work — time for a long break.' : 'Focus session done — take a short break.')
-    : 'Break is over — ready to focus?';
+  const tx = await notifyText();
+  const msg = st.mode === 'focus' ? (next.mode === 'long' ? tx.longBreak : tx.shortBreak) : tx.backToFocus;
   try {
     await ext.notifications.create('pomodoro-' + Date.now(), {
       type: 'basic', iconUrl: ext.runtime.getURL('icons/icon128.png'),
-      title: `${LABEL[st.mode]} finished`, message: msg, priority: 2,
+      title: tx.finished(tx[st.mode]), message: msg, priority: 2,
     });
   } catch (e) { console.warn('[new-tab] notification', e); }
 });

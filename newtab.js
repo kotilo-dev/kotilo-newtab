@@ -71,14 +71,14 @@ function hostOf(url) { try { return new URL(url).hostname.replace(/^www\./, '');
 /* =========================================================
    Saat ve tarih
    ========================================================= */
-const fmtDate = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDate = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 function tick() {
   const d = new Date();
   const h = d.getHours();
   $('hm').textContent = String(h).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   $('sec').textContent = String(d.getSeconds()).padStart(2, '0');
   $('date').textContent = fmtDate.format(d);
-  $('greet').textContent = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
+  $('greet').textContent = t(h < 5 ? 'greet.night' : h < 12 ? 'greet.morning' : h < 18 ? 'greet.afternoon' : h < 22 ? 'greet.evening' : 'greet.night');
 }
 tick();
 setInterval(tick, 1000);
@@ -153,8 +153,8 @@ function indexFolders(nodes, parentId = barId) {
 function currentFolderId() { return navStack.length ? navStack[navStack.length - 1] : barId; }
 
 function folderRow(f) {
-  const b = el('button', { class: 'side-item', 'data-id': f.id, draggable: 'true', title: f.title || 'Untitled folder' },
-    svg(FOLDER), el('span', { class: 'name', text: f.title || 'Untitled folder' }),
+  const b = el('button', { class: 'side-item', 'data-id': f.id, draggable: 'true', title: f.title || t('bm.untitledFolder') },
+    svg(FOLDER), el('span', { class: 'name', text: f.title || t('bm.untitledFolder') }),
     el('small', { text: String(countLinks(f)) }), svg(CHEVRON));
   b.addEventListener('click', () => openFolder(f.id));
   return b;
@@ -188,19 +188,19 @@ function renderNav(dir) {
 
   if (!atRoot) {
     const f = byId.get(navStack[navStack.length - 1]);
-    const parent = navStack.length > 1 ? byId.get(navStack[navStack.length - 2]).title : 'Bookmarks';
-    $('sideBackLabel').textContent = parent || 'Untitled';
+    const parent = navStack.length > 1 ? byId.get(navStack[navStack.length - 2]).title : t('tab.bm');
+    $('sideBackLabel').textContent = parent || t('bm.untitled');
     // Yol: üst klasörlere tıklayınca doğrudan oraya döner.
     const crumbs = [];
     navStack.slice(0, -1).forEach((id, i) => {
-      const c = el('button', { text: byId.get(id).title || 'Untitled' });
+      const c = el('button', { text: byId.get(id).title || t('bm.untitled') });
       c.addEventListener('click', () => goTo(i + 1));
       crumbs.push(c, el('span', { text: '›' }));
     });
     $('sideCrumb').replaceChildren(...crumbs);
     $('sideCrumb').hidden = navStack.length < 2;
-    $('sideTitle').textContent = f.title || 'Untitled folder';
-    $('sideCount').textContent = countLinks(f) + (countLinks(f) === 1 ? ' link' : ' links');
+    $('sideTitle').textContent = f.title || t('bm.untitledFolder');
+    $('sideCount').textContent = tn('bm.links', countLinks(f));
 
     const kids = f.children || [];
     const folders = kids.filter((c) => !c.url);
@@ -208,7 +208,7 @@ function renderNav(dir) {
     const items = [...folders.map((c) => { const r = folderRow(c); if (!countLinks(c)) r.classList.add('is-empty'); return r; }),
       ...links.map((n) => linkRow(n, f.title))];
     if (folders.length && links.length) items.splice(folders.length, 0, el('div', { class: 'side-sep' }));
-    if (!items.length) items.push(el('div', { class: 'side-empty', text: 'This folder is empty. Right-click or use + to add a bookmark.' }));
+    if (!items.length) items.push(el('div', { class: 'side-empty', text: t('bm.emptyFolder') }));
     $('sideItems').replaceChildren(...items);
   }
 
@@ -248,7 +248,7 @@ function searchRow(item, terms) {
     isFolder ? svg(FOLDER) : favImg(item.url),
     el('span', { class: 'hit-text' },
       el('span', { class: 'name' }, highlight(item.title, terms)),
-      el('small', { class: 'hit-path', text: item.path || (isFolder ? 'Bookmarks bar' : hostOf(item.url)) })));
+      el('small', { class: 'hit-path', text: item.path || (isFolder ? t('bm.bar') : hostOf(item.url)) })));
   if (isFolder) {
     row.addEventListener('click', () => openFolder(item.id));
   } else {
@@ -266,15 +266,15 @@ function renderBmSearch() {
   $('sideRoot').hidden = true;
   $('sideFolder').hidden = true;
   const terms = norm(raw).split(/\s+/).filter(Boolean);
-  const folders = [...byId.values()].map((f) => ({ id: f.id, title: f.title || 'Untitled folder', url: '',
-    path: ancestorIds(f.id).map((i) => byId.get(i)?.title || 'Untitled').join(' › ') }));
+  const folders = [...byId.values()].map((f) => ({ id: f.id, title: f.title || t('bm.untitledFolder'), url: '',
+    path: ancestorIds(f.id).map((i) => byId.get(i)?.title || t('bm.untitled')).join(' › ') }));
   const hits = [...folders, ...allLinks].map((x) => [x, score(x, terms)]).filter((x) => x[1] > 0)
     .sort((a, b) => b[1] - a[1]).map((x) => x[0]);
   const shown = hits.slice(0, 100);
-  $('searchCount').textContent = hits.length === 0 ? 'No matches'
-    : hits.length > shown.length ? `${shown.length} of ${hits.length} matches` : `${hits.length} ${hits.length === 1 ? 'match' : 'matches'}`;
+  $('searchCount').textContent = hits.length === 0 ? t('bm.noMatches')
+    : hits.length > shown.length ? t('bm.someOf', { shown: shown.length, total: hits.length }) : tn('bm.matches', hits.length);
   $('searchItems').replaceChildren(...(shown.length ? shown.map((x) => searchRow(x, terms))
-    : [el('div', { class: 'side-empty', text: `Nothing found. Press Enter to search Google for "${raw}".` })]));
+    : [el('div', { class: 'side-empty', text: t('search.nothingFound', { q: raw }) })]));
 }
 
 bmFilter.addEventListener('input', renderBmSearch);
@@ -390,7 +390,7 @@ function resultRow(l, i, terms) {
     el('div', { class: 'r-text' },
       el('div', { class: 'r-title' }, highlight(l.title, terms)),
       el('div', { class: 'r-path', text: (l.path ? l.path + '  ·  ' : '') + hostOf(l.url) })),
-    isTab ? el('span', { class: 'r-badge', text: 'Switch to tab' }) : null);
+    isTab ? el('span', { class: 'r-badge', text: t('search.switchTab') }) : null);
   a.addEventListener('click', (e) => {
     if (isTab) { e.preventDefault(); switchToTab(l); } else trackClick(l.url);
   });
@@ -410,12 +410,12 @@ function renderResults() {
   results = [...tabs, ...bms];
   active = 0;
   if (!results.length) {
-    resultsEl.replaceChildren(el('li', { class: 'r-empty', text: `Nothing found. Press Enter to search Google for "${raw}".` }));
+    resultsEl.replaceChildren(el('li', { class: 'r-empty', text: t('search.nothingFound', { q: raw }) }));
   } else {
     const rows = [];
     let i = 0;
-    if (tabs.length) { rows.push(el('li', { class: 'r-head', text: 'Open tabs' })); tabs.forEach((l) => rows.push(resultRow(l, i++, terms))); }
-    if (bms.length) { if (tabs.length) rows.push(el('li', { class: 'r-head', text: 'Bookmarks' })); bms.forEach((l) => rows.push(resultRow(l, i++, terms))); }
+    if (tabs.length) { rows.push(el('li', { class: 'r-head', text: t('search.openTabs') })); tabs.forEach((l) => rows.push(resultRow(l, i++, terms))); }
+    if (bms.length) { if (tabs.length) rows.push(el('li', { class: 'r-head', text: t('tab.bm') })); bms.forEach((l) => rows.push(resultRow(l, i++, terms))); }
     resultsEl.replaceChildren(...rows);
   }
   resultsEl.hidden = false;
@@ -477,20 +477,21 @@ document.addEventListener('keydown', (e) => {
    Hava durumu (Open-Meteo — anahtar gerektirmez)
    ========================================================= */
 const WMO = {
-  0: ['Clear', '☀️', '🌙'], 1: ['Mostly clear', '🌤️', '🌙'], 2: ['Partly cloudy', '⛅', '☁️'], 3: ['Overcast', '☁️', '☁️'],
-  45: ['Fog', '🌫️'], 48: ['Freezing fog', '🌫️'],
-  51: ['Light drizzle', '🌦️'], 53: ['Drizzle', '🌦️'], 55: ['Heavy drizzle', '🌧️'], 56: ['Freezing drizzle', '🌧️'], 57: ['Freezing drizzle', '🌧️'],
-  61: ['Light rain', '🌦️'], 63: ['Rain', '🌧️'], 65: ['Heavy rain', '🌧️'], 66: ['Freezing rain', '🌧️'], 67: ['Freezing rain', '🌧️'],
-  71: ['Light snow', '🌨️'], 73: ['Snow', '🌨️'], 75: ['Heavy snow', '❄️'], 77: ['Snow grains', '🌨️'],
-  80: ['Showers', '🌦️'], 81: ['Showers', '🌧️'], 82: ['Violent showers', '⛈️'], 85: ['Snow showers', '🌨️'], 86: ['Heavy snow showers', '❄️'],
-  95: ['Thunderstorm', '⛈️'], 96: ['Thunderstorm with hail', '⛈️'], 99: ['Thunderstorm with hail', '⛈️'],
+  0: ['☀️', '🌙'], 1: ['🌤️', '🌙'], 2: ['⛅', '☁️'], 3: ['☁️', '☁️'],
+  45: ['🌫️'], 48: ['🌫️'],
+  51: ['🌦️'], 53: ['🌦️'], 55: ['🌧️'], 56: ['🌧️'], 57: ['🌧️'],
+  61: ['🌦️'], 63: ['🌧️'], 65: ['🌧️'], 66: ['🌧️'], 67: ['🌧️'],
+  71: ['🌨️'], 73: ['🌨️'], 75: ['❄️'], 77: ['🌨️'],
+  80: ['🌦️'], 81: ['🌧️'], 82: ['⛈️'], 85: ['🌨️'], 86: ['❄️'],
+  95: ['⛈️'], 96: ['⛈️'], 99: ['⛈️'],
 };
 function wmo(code, isDay = 1) {
-  const w = WMO[code] || ['—', '🌡️'];
-  return { text: w[0], icon: (!isDay && w[2]) ? w[2] : w[1] };
+  const w = WMO[code] || ['🌡️'];
+  return { text: WMO[code] ? t('wmo.' + code) : '—', icon: (!isDay && w[1]) ? w[1] : w[0] };
 }
 const DEFAULT_LOC = { mode: 'auto' }; // konum: tarayıcı konumu ya da kullanıcının seçtiği şehir; ikisi de yoksa şehir seçmesi istenir
 const CACHE_MIN = 20;
+const AUTO_LOC_KEY = LANG === 'tr' ? 'autoLocTr' : 'autoLocEn'; // otomatik konum adı dile göre önbelleğe alınır
 // Birimler ayarlardan (settings.region; settings.js). Ayarlar henüz yüklenmediyse °C ve km/h.
 const WIND_LABEL = { kmh: 'km/h', mph: 'mph', ms: 'm/s' };
 const wxUnits = () => {
@@ -508,7 +509,7 @@ function getPosition() {
 }
 async function reverseName(lat, lon) {
   try {
-    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${LANG}`);
     const j = await r.json();
     return j.city || j.locality || j.principalSubdivision || null;
   } catch { return null; }
@@ -517,12 +518,12 @@ async function reverseName(lat, lon) {
 async function resolveLocation() {
   const saved = await store.get('loc', DEFAULT_LOC);
   if (saved.mode === 'city') return saved;
-  const cachedAuto = await store.get('autoLocEn', null);
+  const cachedAuto = await store.get(AUTO_LOC_KEY, null);
   if (cachedAuto && Date.now() - cachedAuto.at < 6 * 3600e3) return cachedAuto;
   const pos = await getPosition();
   if (!pos) return null; // konum izni yoksa kullanıcıdan şehir seçmesi istenir
-  const loc = { mode: 'auto', ...pos, name: (await reverseName(pos.lat, pos.lon)) || 'Your location', at: Date.now() };
-  store.set('autoLocEn', loc);
+  const loc = { mode: 'auto', ...pos, name: (await reverseName(pos.lat, pos.lon)) || t('wx.yourLocation'), at: Date.now() };
+  store.set(AUTO_LOC_KEY, loc);
   return loc;
 }
 
@@ -531,8 +532,8 @@ async function loadWeather(force = false) {
     const loc = await resolveLocation();
     $('weather').classList.toggle('no-loc', !loc);
     if (!loc) {
-      $('wCityName').textContent = 'Set city';
-      $('wDesc').textContent = 'Allow location access, or press 📍 to choose a city.';
+      $('wCityName').textContent = t('wx.setCity');
+      $('wDesc').textContent = t('wx.allowLoc');
       return;
     }
     $('wCityName').textContent = loc.name;
@@ -553,7 +554,7 @@ async function loadWeather(force = false) {
     }
     renderWeather(cache.data);
   } catch (err) {
-    $('wDesc').textContent = 'Weather unavailable (check your network connection).';
+    $('wDesc').textContent = t('wx.unavailable');
     console.warn('[yeni-sekme] hava durumu', err);
   }
 }
@@ -563,8 +564,8 @@ function renderWeather(d) {
   const w = wmo(c.weather_code, c.is_day);
   $('wIcon').textContent = w.icon;
   $('wTemp').textContent = Math.round(c.temperature_2m) + '°';
-  $('wDesc').textContent = `${w.text} · Feels like ${Math.round(c.apparent_temperature)}° · Humidity ${c.relative_humidity_2m}% · Wind ${Math.round(c.wind_speed_10m)} ${WIND_LABEL[wxUnits().wind]}`;
-  $('wRange').textContent = `Low ${Math.round(d.daily.temperature_2m_min[0])}° · High ${Math.round(d.daily.temperature_2m_max[0])}°`;
+  $('wDesc').textContent = t('wx.desc', { text: w.text, feels: Math.round(c.apparent_temperature), hum: c.relative_humidity_2m, wind: Math.round(c.wind_speed_10m), unit: WIND_LABEL[wxUnits().wind] });
+  $('wRange').textContent = t('wx.range', { lo: Math.round(d.daily.temperature_2m_min[0]), hi: Math.round(d.daily.temperature_2m_max[0]) });
 
   // Sonraki 5 saat (API saatleri konumun yerel saatinde, "YYYY-MM-DDTHH:00" biçiminde).
   // 5 günlük görünümle aynı satır biçimi ve sayısı: sekme değişince kart boyu değişmesin.
@@ -584,7 +585,7 @@ function renderWeather(d) {
   $('wHours').replaceChildren(...cells);
 
   // Sonraki 5 gün (yarından itibaren). Gün adı, tarih dizesinden UTC öğlen saatiyle hesaplanır (saat dilimi kayması olmasın).
-  const dayFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+  const dayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
   const days = [];
   for (let i = 1; i < Math.min(6, d.daily.time.length); i++) {
     const dw = wmo(d.daily.weather_code[i]);
@@ -619,18 +620,19 @@ $('wCityForm').addEventListener('submit', async (e) => {
   const name = $('wCityInput').value.trim();
   if (!name) return;
   try {
-    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&name=' + encodeURIComponent(name));
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=' + LANG + '&name=' + encodeURIComponent(name));
     const j = await r.json();
     const g = j.results && j.results[0];
-    if (!g) { $('wCityInput').value = ''; $('wCityInput').placeholder = 'Not found, try again'; return; }
+    if (!g) { $('wCityInput').value = ''; $('wCityInput').placeholder = t('wx.notFound'); return; }
     await store.set('loc', { mode: 'city', name: g.name, lat: g.latitude, lon: g.longitude });
     $('wCityForm').hidden = true;
     loadWeather(true);
-  } catch { $('wCityInput').placeholder = 'Connection error'; }
+  } catch { $('wCityInput').placeholder = t('common.connError'); }
 });
 $('wAuto').addEventListener('click', async () => {
   await store.set('loc', DEFAULT_LOC);
   await store.set('autoLocEn', null);
+  await store.set('autoLocTr', null);
   $('wCityForm').hidden = true;
   loadWeather(true);
 });

@@ -6,7 +6,7 @@
    newtab.js'ten sonra yüklenir ($, el, ext, isExt, store). */
 
 const POMO_DEFAULT_MIN = { focus: 25, short: 5, long: 15 };
-const POMO_LABEL = { focus: 'Focus', short: 'Short break', long: 'Long break' };
+const POMO_LABEL = { focus: t('pomo.mode.focus'), short: t('pomo.mode.short'), long: t('pomo.mode.long') };
 let pomo = null;
 const baseTitle = document.title;
 
@@ -59,18 +59,18 @@ function renderPomo() {
   if (!pomo) return;
   const ms = remainingMs();
   $('pomoTime').textContent = fmtClock(ms);
-  $('pomoStart').textContent = pomo.running ? 'Pause' : (pomo.remaining < pomoDur(pomo.mode) ? 'Resume' : 'Start');
+  $('pomoStart').textContent = pomo.running ? t('pomo.pause') : (pomo.remaining < pomoDur(pomo.mode) ? t('pomo.resume') : t('pomo.start'));
   $('wPomo').classList.toggle('running', !!pomo.running);
   $('wPomo').dataset.mode = pomo.mode;
   document.querySelectorAll('#pomoModes button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === pomo.mode)));
   // Tur noktaları: mevcut 4'lü döngüde tamamlanan odaklar
   const done = (pomo.round || 0) % 4;
   $('pomoDots').replaceChildren(...[0, 1, 2, 3].map((i) => el('span', { class: 'pomo-dot' + (i < done ? ' on' : '') })));
-  $('pomoDots').title = `${pomo.round || 0} focus sessions completed`;
+  $('pomoDots').title = t('pomo.completed', { n: pomo.round || 0 });
   const total = pomoDur(pomo.mode);
   $('pomoBar').style.width = (100 * (1 - ms / total)).toFixed(2) + '%';
   $('pomoMsg').textContent = pomo.finishedAt && Date.now() - pomo.finishedAt < 10 * 60e3 && !pomo.running
-    ? `${POMO_LABEL[pomo.finishedMode]} finished — start your ${POMO_LABEL[pomo.mode].toLowerCase()}.` : POMO_LABEL[pomo.mode];
+    ? t('pomo.finished', { done: POMO_LABEL[pomo.finishedMode], next: POMO_LABEL[pomo.mode].toLocaleLowerCase(LOCALE) }) : POMO_LABEL[pomo.mode];
   document.title = pomo.running ? `${fmtClock(ms)} · ${POMO_LABEL[pomo.mode]}` : baseTitle;
 }
 

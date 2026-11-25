@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Kotilo New Tab",
+    "description": "Extension name"
+  },
+  "extShortName": {
+    "message": "New Tab",
+    "description": "Short extension name"
+  },
+  "extDescription": {
+    "message": "Bookmarks sidebar, weather, calendar, to-dos, notes, news, Pomodoro and exchange rates on every new tab. No tracking.",
+    "description": "Extension description (max 132 characters)"
+  }
+}

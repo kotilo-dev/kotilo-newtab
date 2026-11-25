@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const out = join(root, 'dist', 'firefox');
-const FILES = ['newtab.html', 'newtab.css', 'newtab.js', 'widgets.js', 'manage.js', 'settings.js', 'markets.js', 'calendar.js', 'news.js', 'pomodoro.js', 'background.js', 'icons'];
+const FILES = ['newtab.html', 'newtab.css', 'i18n.js', 'newtab.js', 'widgets.js', 'manage.js', 'settings.js', 'markets.js', 'calendar.js', 'news.js', 'pomodoro.js', 'background.js', 'icons', '_locales'];
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
