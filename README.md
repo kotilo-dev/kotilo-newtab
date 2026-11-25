@@ -15,7 +15,7 @@ Part of [Kotilo](https://kotilo.dev) · Türkçe: [aşağıda](#türkçe)
 
 - **Bookmarks sidebar:** browse folders in place, filter the sidebar as you type, search all bookmarks and open tabs, add, edit, delete and drag to reorder. Changes go straight to your browser's bookmarks.
 - **Web search** with the search engine you chose in your browser; the results list always ends with "Search the web for …".
-- **Recent and top sites, saved sessions:** recently closed tabs and your most visited sites, one click away. Save the open tabs of a window as a bookmark folder (Other bookmarks › Kotilo sessions) and reopen them in a new window.
+- **Recent and top sites, saved sessions:** recently closed tabs and your most visited sites, one click away. Save the open tabs of a window under a name you choose as a bookmark folder (Other bookmarks › Kotilo sessions), rename it later and reopen it in a new window.
 - **News:** add any RSS or Atom feed (or a site address; its feed is found automatically) and filter by source.
 - **Clock and calendar:** world clocks; a monthly calendar with ISO week numbers and public holidays for your country (from Nager.Date).
 - **Weather:** current conditions, hourly and 5-day forecast (Open-Meteo), in °C or °F.

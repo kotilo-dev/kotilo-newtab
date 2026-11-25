@@ -288,14 +288,21 @@ async function renderSessions() {
       el('span', { class: 'fav', text: '🗗' }), el('span', { class: 'name', text: k.title }),
       el('small', { text: tn('closed.tabs', urls.length) }));
     main.addEventListener('click', () => restore(urls));
-    const del = el('button', { class: 'sess-del', title: t('sess.delete'), 'aria-label': t('sess.delete'), text: '✕' });
+    const ren = el('button', { class: 'sess-act', title: t('sess.rename'), 'aria-label': t('sess.rename'), text: '✎' });
+    ren.addEventListener('click', async () => {
+      const v = await openDialog({ title: t('sess.rename'), fields: [{ key: 'title', label: t('dlg.name'), value: k.title, placeholder: t('sess.namePh') }] });
+      if (!v || !v.title || v.title === k.title) return;
+      try { await ext.bookmarks.update(k.id, { title: v.title }); } catch { /* silinmiş olabilir */ }
+      renderSessions();
+    });
+    const del = el('button', { class: 'sess-act sess-del',title: t('sess.delete'), 'aria-label': t('sess.delete'), text: '✕' });
     del.addEventListener('click', async () => {
       const ok = await openDialog({ title: t('sess.delete'), message: t('sess.deleteMsg', { name: k.title }), okText: t('sess.delete'), danger: true });
       if (!ok) return;
       try { await ext.bookmarks.removeTree(k.id); } catch { /* zaten silinmiş */ }
       renderSessions();
     });
-    return el('div', { class: 'sess-row' }, main, del);
+    return el('div', { class: 'sess-row' }, main, ren, del);
   }));
 }
 async function saveSession() {
@@ -306,14 +313,18 @@ async function saveSession() {
   try {
     const tabs = (await ext.tabs.query({ currentWindow: true })).filter((x) => httpOnly(x.url));
     if (!tabs.length) { msg.textContent = t('sess.noTabs'); return; }
+    // Ad sorulur; tarih hazır gelir, Enter ile olduğu gibi kaydedilir. İptal kaydı durdurur.
+    const stamp = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+    const v = await openDialog({ title: t('sess.save'), message: tn('closed.tabs', tabs.length),
+      fields: [{ key: 'title', label: t('dlg.name'), value: stamp, placeholder: t('sess.namePh') }] });
+    if (!v) return;
+    const title = v.title || stamp;
     const parent = await sessFolder(true);
-    const title = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
     const dir = await ext.bookmarks.create({ parentId: parent.id, title });
     for (const x of tabs) await ext.bookmarks.create({ parentId: dir.id, title: x.title || x.url, url: x.url });
     msg.textContent = t('sess.saved', { n: tn('closed.tabs', tabs.length) });
   } catch { msg.textContent = t('sess.fail'); }
-  btn.disabled = false;
-  renderSessions();
+  finally { btn.disabled = false; renderSessions(); } // erken return'lerde de düğme açılsın
 }
 if (sessSupported) {
   $('sessSave').addEventListener('click', saveSession);

@@ -594,8 +594,9 @@ body.zen .widgets, body.zen #clocks { display: none !important; }
 #sessMsg:empty { display: none; }
 .sess-row { display: flex; align-items: center; gap: 2px; }
 .sess-row .side-item { flex: 1; min-width: 0; }
-.sess-del { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 6px; width: 24px; height: 24px; font-size: 12px; }
-.sess-del:hover, .sess-del:focus-visible { color: #d33; background: var(--accent-soft); }
+.sess-act { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 6px; width: 24px; height: 24px; font-size: 12px; }
+.sess-act:hover, .sess-act:focus-visible { color: var(--text); background: var(--accent-soft); }
+.sess-del:hover, .sess-del:focus-visible { color: #d33; }
 #sessSec { margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 
 /* ---------- Alt satır ve sade mod yerleşimi (3.2) ----------

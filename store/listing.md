@@ -24,7 +24,7 @@ Turn every new tab into a calm, useful start page.
 
 • Bookmarks sidebar — browse your bookmarks bar folder by folder, filter it as you type, search bookmarks and open tabs, and add, edit, delete or drag bookmarks without leaving the page.
 • Search the web with your browser's own search engine, right from the search box.
-• Recently closed tabs, most visited sites and saved sessions: save all open tabs as a bookmark folder and reopen them later.
+• Recently closed tabs, most visited sites and saved sessions: save all open tabs as a named bookmark folder and reopen them later.
 • News — follow any RSS or Atom feed and filter by source.
 • Clock, world clocks and a monthly calendar with public holidays for your country.
 • Weather — now, hourly and 5 days, in °C or °F.
@@ -49,7 +49,7 @@ Her yeni sekmeyi sakin ve işe yarar bir başlangıç sayfasına çevir.
 
 • Yer imi kenar çubuğu: yer imi çubuğunda klasör klasör gez, yazarken filtrele, yer imlerinde ve açık sekmelerde ara; sayfadan çıkmadan yer imi ekle, düzenle, sil ya da sürükle.
 • Tarayıcının kendi arama motoruyla doğrudan arama kutusundan web'de ara.
-• Son kapatılan sekmeler, en çok ziyaret edilen siteler ve kayıtlı oturumlar: açık sekmelerin hepsini bir yer imi klasörüne kaydet, sonra yeniden aç.
+• Son kapatılan sekmeler, en çok ziyaret edilen siteler ve kayıtlı oturumlar: açık sekmelerin hepsini istediğin adla bir yer imi klasörüne kaydet, sonra yeniden aç.
 • Haberler: istediğin RSS ya da Atom akışını ekle, kaynağa göre filtrele.
 • Saat, dünya saatleri ve ülkenin resmî tatilleriyle aylık takvim.
 • Hava durumu: şimdi, saatlik ve 5 günlük; °C ya da °F.
