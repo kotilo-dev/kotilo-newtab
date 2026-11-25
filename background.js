@@ -52,3 +52,8 @@ ext.alarms.onAlarm.addListener(async (alarm) => {
     });
   } catch (e) { console.warn('[new-tab] notification', e); }
 });
+
+// Yeni kurulumda arka plan varsayılanı: Wikimedia Commons günün resmi (var olan kullanıcıların ayarına dokunulmaz).
+ext.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install') ext.storage.local.get('bgMode').then((r) => { if (r.bgMode == null) ext.storage.local.set({ bgMode: 'potd' }); });
+});

@@ -67,6 +67,15 @@
 
     <!-- Son kapatılan sekmeler ve en çok ziyaret edilen siteler -->
     <div class="side-pane" id="paneClosed" role="tabpanel" hidden>
+      <!-- Kayıtlı oturumlar (tab sessions) -->
+      <section id="sessSec" hidden>
+        <div class="sess-head">
+          <h2 class="side-title" data-i18n="sess.title">Saved sessions</h2>
+          <button class="btn sess-save" id="sessSave" data-i18n="sess.save">Save open tabs</button>
+        </div>
+        <div class="side-empty" id="sessMsg" role="status"></div>
+        <div class="side-list" id="sessList"></div>
+      </section>
       <h2 class="side-title" data-i18n="tab.closed">Recently closed</h2>
       <div class="side-list" id="closedList"></div>
     </div>
@@ -89,10 +98,12 @@
 
     <div class="side-foot">
       <button class="side-settings" id="setOpen" data-i18n="side.settings">⚙ Settings</button>
+      <button class="side-settings" id="zenBtn" data-i18n="zen.btn">◐ Zen</button>
       <div class="side-keys">
         <span><kbd>/</kbd> <span data-i18n="keys.search">search</span></span>
         <span><kbd>⌫</kbd> <span data-i18n="keys.back">back</span></span>
         <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="keys.navigate">navigate</span></span>
+        <span><kbd>Alt+Z</kbd> <span data-i18n="keys.zen">zen</span></span>
         <span data-i18n="keys.edit">Right-click to edit · drag to move</span>
       </div>
     </div>
@@ -227,15 +238,18 @@
     </section>
 
     <footer class="credit" id="credit"></footer>
+    <button class="zen-exit" id="zenExit" data-i18n="zen.exit">Exit zen · Alt+Z</button>
   </main>
 
   <!-- Arka plan ayarı: kendi duvar kâğıtlarım / kapalı -->
   <section class="bg-panel" id="bgPanel" aria-label="Background settings" data-i18n-aria="bg.settings" hidden>
     <header><h3 data-i18n="bg.title">Background</h3><button class="panel-close" id="bgClose" aria-label="Close" data-i18n-aria="common.close">✕</button></header>
     <div class="seg" role="group" aria-label="Background source" data-i18n-aria="bg.source">
+      <button data-mode="potd" data-i18n="bg.potd">Picture of the day</button>
       <button data-mode="own" data-i18n="bg.own">My wallpapers</button>
       <button data-mode="off" data-i18n="bg.off">Off</button>
     </div>
+    <small class="muted potd-note" id="potdNote" data-i18n="bg.potdNote" hidden>A new photo from Wikimedia Commons every day.</small>
     <div id="ownBox" hidden>
       <div class="wp-grid" id="wpGrid"></div>
       <label class="wp-add"><span data-i18n="bg.add">+ Add photos or videos</span><input type="file" id="wpFile" accept="image/*,video/mp4,video/webm" multiple hidden></label>
@@ -275,6 +289,15 @@
     </form>
     <ul class="mw-suggest" id="mwSuggest" role="listbox" hidden></ul>
     <small class="muted" id="mwState"></small>
+    <!-- Yedek (settings.js, Backup) -->
+    <h4 class="set-title" data-i18n="set.backup">Backup</h4>
+    <div class="set-backup">
+      <button class="btn" id="bkExport" data-i18n="set.export">Export…</button>
+      <button class="btn" id="bkImport" data-i18n="set.import">Import…</button>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden>
+    </div>
+    <small class="muted" id="bkState" role="status"></small>
+    <small class="muted" data-i18n="set.backupNote">Wallpapers are not included in the backup.</small>
     <button class="btn set-bg" id="setBg" data-i18n="set.bgBtn">🖼 Background…</button>
     <small class="muted" data-i18n="set.syncNote">Settings sync with your browser account.</small>
   </section>

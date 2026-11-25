@@ -564,3 +564,43 @@ a.mkt-row:hover { background: var(--accent-soft); }
 .mkt-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; }
 .mkt-foot #mktTime { margin-top: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mkt .mkt-tabs { flex: 1; }
+
+/* ---------- Yedek, kart sırası ve sade mod (3.2) ---------- */
+.set-backup { display: flex; gap: 8px; margin-bottom: 6px; }
+.set-backup .btn { flex: 1; }
+.set-toggle-row { display: flex; align-items: center; gap: 4px; }
+.set-toggle-row .set-toggle { flex: 1; min-width: 0; }
+.mv-btn { background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 11px; line-height: 1; width: 22px; height: 22px; padding: 0; }
+.mv-btn:hover, .mv-btn:focus-visible { color: var(--accent); border-color: var(--accent); }
+.mv-spacer { display: inline-block; width: 22px; flex: none; }
+.set-order { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; }
+.zen-exit {
+  display: none; position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 20;
+  background: rgba(0,0,0,.35); color: #fff; border: 0; border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  opacity: .35; transition: opacity .2s;
+}
+.zen-exit:hover, .zen-exit:focus-visible { opacity: 1; }
+body.zen .zen-exit { display: block; }
+body.zen .side, body.zen .side-show, body.zen #quote, body.zen .search-wrap, body.zen #focus,
+body.zen .widgets, body.zen #clocks { display: none !important; }
+
+/* ---------- Günün resmi ve kayıtlı oturumlar (3.2) ---------- */
+.potd-credit { min-width: 0; max-width: min(60vw, 720px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.potd-credit a { text-decoration: underline; }
+.potd-note { display: block; margin-top: 8px; }
+.sess-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.sess-head .side-title { margin: 6px 0 6px 10px; white-space: nowrap; }
+.sess-save { padding: 4px 8px; font-size: 11px; white-space: nowrap; flex: none; }
+#sessMsg:empty { display: none; }
+.sess-row { display: flex; align-items: center; gap: 2px; }
+.sess-row .side-item { flex: 1; min-width: 0; }
+.sess-del { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 6px; width: 24px; height: 24px; font-size: 12px; }
+.sess-del:hover, .sess-del:focus-visible { color: #d33; background: var(--accent-soft); }
+#sessSec { margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+
+/* ---------- Alt satır ve sade mod yerleşimi (3.2) ----------
+   Arka plan düğmesi ve günün resminin künyesi sayfa akışının sonunda durur; sabit (fixed) olunca kısa ekranlarda kartların
+   düğmelerinin üstüne biniyordu. Sade modda kenar çubuğu gizli olduğu için saat ortalanır. */
+.main { padding-bottom: 10px; }
+.credit { position: static; align-self: flex-end; margin-top: auto; padding-top: 14px; max-width: 100%; }
+body.zen .main { margin-left: 0; }

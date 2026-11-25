@@ -8,6 +8,8 @@ const $ = (id) => document.getElementById(id);
 const ext = (typeof browser !== 'undefined' && browser.runtime) ? browser : (typeof chrome !== 'undefined' ? chrome : undefined);
 const isExt = !!(ext && ext.runtime && ext.runtime.id);
 const isFirefox = typeof browser !== 'undefined' && /Firefox\//.test(navigator.userAgent);
+// Sade mod (settings.js toggleZen) ilk çizimden önce uygulanır.
+try { if (localStorage.getItem('zen') === '1') document.body.classList.add('zen'); } catch { /* depolama kapalı */ }
 
 function el(tag, attrs = {}, ...children) {
   const n = document.createElement(tag);
@@ -432,8 +434,12 @@ function webRow(raw, i) {
 // Firefox kullanıcı hareketi istediği için tuş/tıklama işleyicisinin içinde, beklemeden çağrılır.
 // Önizlemede (eklenti API'si yok) Google'a düşer.
 function webSearch(text, newTab) {
-  if (ext && ext.search && ext.search.query) ext.search.query({ text, disposition: newTab ? 'NEW_TAB' : 'CURRENT_TAB' });
-  else openUrl('https://www.google.com/search?q=' + encodeURIComponent(text), newTab);
+  const fallback = () => openUrl('https://www.google.com/search?q=' + encodeURIComponent(text), newTab);
+  if (!(ext && ext.search && ext.search.query)) { fallback(); return; }
+  try {
+    const p = ext.search.query({ text, disposition: newTab ? 'NEW_TAB' : 'CURRENT_TAB' });
+    if (p && p.catch) p.catch((err) => { console.warn('[new-tab] search', err); fallback(); });
+  } catch (err) { console.warn('[new-tab] search', err); fallback(); }
 }
 function setActive(i) {
   const items = resultsEl.querySelectorAll('li[role=option]');
@@ -465,6 +471,11 @@ q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !
 q.addEventListener('focus', async () => { await refreshTabs(); if (q.value.trim()) renderResults(); });
 
 document.addEventListener('keydown', (e) => {
+  // Sade mod: Alt+Z her yerde çalışır; Esc açık pencere yoksa sade moddan çıkar.
+  // AltGr (Windows'ta Alt+Ctrl gelir) ve macOS Option+Z karakter yazar (ör. Lehçe "ż", "Ω"); onları yutma.
+  const altGr = e.ctrlKey || e.metaKey || (e.getModifierState && e.getModifierState('AltGraph'));
+  if (e.altKey && !altGr && e.code === 'KeyZ' && !document.querySelector('dialog[open]')) { e.preventDefault(); toggleZen(); return; }
+  if (e.key === 'Escape' && document.body.classList.contains('zen') && !document.querySelector('dialog[open]')) { toggleZen(false); return; }
   const tag = (document.activeElement && document.activeElement.tagName) || '';
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (document.querySelector('dialog[open]')) return; // açık pencere varken kısayollar çalışmasın

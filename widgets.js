@@ -196,7 +196,7 @@ function setSideTab(tab) {
   $('sideAdd').style.visibility = sideTab === 'bm' || sideTab === 'news' ? '' : 'hidden';
   $('sideAdd').title = sideTab === 'news' ? t('news.addFeed') : t('side.add');
   $('side').scrollTop = 0;
-  if (sideTab === 'closed') renderClosed();
+  if (sideTab === 'closed') { renderClosed(); renderSessions(); }
   if (sideTab === 'top') renderTop();
   if (sideTab === 'news' && typeof openNews === 'function') openNews();
 }
@@ -251,6 +251,78 @@ async function renderTop() {
     favImg(s.url), el('span', { class: 'name', text: s.title || hostOf(s.url) }))));
 }
 if (isExt && ext.sessions && ext.sessions.onChanged) ext.sessions.onChanged.addListener(() => { if (sideTab === 'closed') renderClosed(); });
+
+/* ---- Kayıtlı oturumlar: "Kotilo sessions" yer imi klasörü, her oturum bir alt klasör ---- */
+const SESS_FOLDER = 'Kotilo sessions';
+const httpOnly = (u) => /^https?:\/\//i.test(u || '');
+const sessSupported = isExt && !!ext.bookmarks;
+async function sessOtherRoot() {
+  const roots = ((await ext.bookmarks.getTree())[0] || {}).children || [];
+  const others = roots.filter((r) => r.folderType === 'other');
+  return others.find((r) => r.syncing !== false) || others[0]
+    || roots.find((r) => r.id === '2' || r.id === 'unfiled_____') || null;
+}
+async function sessFolder(create) {
+  const root = await sessOtherRoot();
+  if (!root) return null;
+  const found = (root.children || []).find((c) => !c.url && c.title === SESS_FOLDER);
+  if (found) return found;
+  return create ? ext.bookmarks.create({ parentId: root.id, title: SESS_FOLDER }) : null;
+}
+async function renderSessions() {
+  const sec = $('sessSec');
+  sec.hidden = !sessSupported;
+  if (!sessSupported) return;
+  const box = $('sessList');
+  let kids = [];
+  try {
+    const f = await sessFolder(false);
+    if (f) kids = (f.children || []).filter((c) => !c.url);
+  } catch { /* okunamazsa boş liste */ }
+  kids.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+  if (!kids.length) { box.replaceChildren(emptyRow(t('sess.empty'))); return; }
+  const restore = (urls) => { if (urls.length) Promise.resolve(ext.windows.create({ url: urls })).catch((e) => console.warn('[new-tab] restore session', e)); };
+  box.replaceChildren(...kids.slice(0, 10).map((k) => {
+    const urls = (k.children || []).map((c) => c.url).filter(httpOnly);
+    const main = el('button', { class: 'side-item', title: t('sess.restore') },
+      el('span', { class: 'fav', text: '🗗' }), el('span', { class: 'name', text: k.title }),
+      el('small', { text: tn('closed.tabs', urls.length) }));
+    main.addEventListener('click', () => restore(urls));
+    const del = el('button', { class: 'sess-del', title: t('sess.delete'), 'aria-label': t('sess.delete'), text: '✕' });
+    del.addEventListener('click', async () => {
+      const ok = await openDialog({ title: t('sess.delete'), message: t('sess.deleteMsg', { name: k.title }), okText: t('sess.delete'), danger: true });
+      if (!ok) return;
+      try { await ext.bookmarks.removeTree(k.id); } catch { /* zaten silinmiş */ }
+      renderSessions();
+    });
+    return el('div', { class: 'sess-row' }, main, del);
+  }));
+}
+async function saveSession() {
+  const msg = $('sessMsg'), btn = $('sessSave');
+  if (btn.disabled) return; // çift tıklama iki "Kotilo sessions" klasörü oluşturmasın
+  btn.disabled = true;
+  msg.textContent = '';
+  try {
+    const tabs = (await ext.tabs.query({ currentWindow: true })).filter((x) => httpOnly(x.url));
+    if (!tabs.length) { msg.textContent = t('sess.noTabs'); return; }
+    const parent = await sessFolder(true);
+    const title = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+    const dir = await ext.bookmarks.create({ parentId: parent.id, title });
+    for (const x of tabs) await ext.bookmarks.create({ parentId: dir.id, title: x.title || x.url, url: x.url });
+    msg.textContent = t('sess.saved', { n: tn('closed.tabs', tabs.length) });
+  } catch { msg.textContent = t('sess.fail'); }
+  btn.disabled = false;
+  renderSessions();
+}
+if (sessSupported) {
+  $('sessSave').addEventListener('click', saveSession);
+  let sessTimer;
+  const sessRefresh = () => { clearTimeout(sessTimer); sessTimer = setTimeout(() => { if (sideTab === 'closed') renderSessions(); }, 250); };
+  for (const ev of ['onCreated', 'onRemoved', 'onChanged', 'onMoved', 'onImportEnded']) {
+    ext.bookmarks[ev] && ext.bookmarks[ev].addListener(sessRefresh);
+  }
+}
 
 /* =========================================================
    Arka plan: kendi fotoğrafların/videoların ya da kapalı.
@@ -324,6 +396,7 @@ function showBg(url, gen) {
     releaseShown(url);
     document.body.classList.add('has-photo');
   };
+  pre.onerror = () => { if (gen === bgGen) hideBg(); }; // bozuk adres: düz arka plan
   pre.src = url;
 }
 // Video arka plan: sessiz, döngüde; oynamaya hazır olunca gösterilir. Sekme görünmezken duraklar (işlemciyi yormasın).
@@ -358,8 +431,91 @@ function hideBg() {
 }
 
 async function getBgMode() {
-  // 3.0'da Bing günün fotoğrafı kaldırıldı: yalnızca kendi duvar kâğıtları ya da düz arka plan.
-  return (await store.get('bgMode', null)) === 'own' ? 'own' : 'off';
+  // 3.0'da Bing günün fotoğrafı kaldırıldı; 3.2'de Wikimedia Commons günün resmi ('potd') geldi. Ayar yoksa düz arka plan.
+  const m = await store.get('bgMode', null);
+  return m === 'potd' || m === 'own' ? m : 'off';
+}
+
+/* ---- Günün resmi (Wikimedia Commons) ---- */
+const POTD_API = 'https://api.wikimedia.org/feed/v1/wikipedia/en/featured/';
+// Saf işlevler (test edilebilsin diye DOM'a dokunmaz). entry: API yanıtındaki .image nesnesi ya da null.
+function potdOk(img) {
+  if (!img || !img.image || !img.image.source) return false;
+  const w = img.image.width, h = img.image.height;
+  const src = String(img.image.source).split('?')[0];
+  if (!/\.jpe?g$/i.test(src)) return false;
+  if (!w || !h || w < 1920) return false;
+  const r = w / h;
+  return r >= 1.3 && r <= 2.4;
+}
+// entries: en yeniden eskiye .image nesneleri (boş olabilir). Uygun olan ilki; yoksa resmi olan ilk gün.
+function pickPotd(entries) {
+  return entries.find(potdOk) || entries.find((e) => e && e.image && e.image.source) || null;
+}
+function potdThumbUrl(src, width) {
+  const m = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/((?:[0-9a-f]\/[0-9a-f]{2})\/([^/]+))$/.exec(String(src).split('?')[0]);
+  if (!m) return null;
+  return `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${width}px-${m[2]}`;
+}
+function potdRecord(img, day) {
+  const s = (v, n) => { v = String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); return n && v.length > n ? v.slice(0, n - 1) + '…' : v; };
+  const https = (u) => (/^https:\/\//i.test(String(u || '')) ? String(u) : '');
+  const w = img.image.width;
+  const src = String(img.image.source).split('?')[0];
+  if (!/\.(jpe?g|png)$/i.test(src)) return null; // SVG/TIFF/GIF/video: küçük resim adresi farklı ya da arka plana uygun değil
+  const url = (w >= 1920 ? potdThumbUrl(src, 1920) : null)
+    || (src.startsWith('https://upload.wikimedia.org/') ? src : null);
+  if (!url) return null;
+  return {
+    day, url,
+    title: s((img.title || '').replace(/^File:/i, '').replace(/\.[a-z0-9]+$/i, '').replace(/_/g, ' '), 120),
+    artist: s(img.artist && img.artist.text, 80),
+    license: s(img.license && img.license.type, 40),
+    licenseUrl: https(img.license && img.license.url),
+    page: https(img.file_page),
+    desc: s(img.description && img.description.text, 120),
+  };
+}
+function localDay(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+async function fetchPotd() {
+  const entries = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(Date.now() - i * 864e5);
+    const path = `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`;
+    try {
+      const r = await fetch(POTD_API + path);
+      if (!r.ok) { entries.push(null); continue; }
+      const j = await r.json();
+      entries.push(j && j.image ? j.image : null);
+    } catch { entries.push(null); }
+    if (potdOk(entries[entries.length - 1])) break;
+  }
+  const pick = pickPotd(entries);
+  return pick ? potdRecord(pick, localDay()) : null;
+}
+async function getPotd() {
+  const cached = await store.get('potd', null);
+  if (cached && cached.day === localDay() && cached.url) return cached;
+  // Servis yanıt vermediyse bir saat yeniden denenmez (her yeni sekme 7 istek atmasın).
+  const failedAt = await store.get('potdFail', 0);
+  if (Date.now() - failedAt > 36e5) {
+    const fresh = await fetchPotd();
+    if (fresh) { store.set('potd', fresh); return fresh; }
+    store.set('potdFail', Date.now());
+  }
+  return cached && cached.url ? cached : null;
+}
+function potdCredit(p) {
+  const text = p.title || p.desc;
+  const head = p.page && text ? el('a', { href: p.page, target: '_blank', rel: 'noopener noreferrer', text }) : (text ? el('span', { text }) : null);
+  const rest = [p.artist, p.license].filter(Boolean).join(' · ');
+  const parts = [head, rest ? el('span', { text: rest }) : null].filter(Boolean);
+  if (!parts.length) return null;
+  const box = el('span', { class: 'potd-credit' });
+  parts.forEach((x, i) => { if (i) box.append(' · '); box.append(x); });
+  return box;
 }
 
 async function loadPhoto() {
@@ -371,6 +527,15 @@ async function loadPhoto() {
   btn.addEventListener('click', toggleBgPanel);
 
   if (mode === 'off') { hideBg(); credit.replaceChildren(btn); return; }
+
+  if (mode === 'potd') {
+    const p = await getPotd().catch(() => null);
+    if (gen !== bgGen) return;
+    if (!p) { hideBg(); credit.replaceChildren(btn); return; }
+    showBg(p.url, gen);
+    credit.replaceChildren(...[potdCredit(p), btn].filter(Boolean));
+    return;
+  }
 
   if (mode === 'own') {
     const list = await wpAll().catch(() => []);
@@ -400,6 +565,7 @@ async function renderBgPanel() {
   const mode = await getBgMode();
   document.querySelectorAll('#bgPanel .seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
   $('ownBox').hidden = mode !== 'own';
+  $('potdNote').hidden = mode !== 'potd';
   if (mode !== 'own') return;
 
   thumbUrls.forEach((u) => URL.revokeObjectURL(u)); thumbUrls = [];
@@ -497,6 +663,8 @@ document.addEventListener('drop', (e) => {
     ext.storage.onChanged.addListener((ch, area) => {
       if (area === 'sync' && ch.todos) { todos = ch.todos.newValue || []; renderTodos(); }
       if (area === 'sync' && ch.focus) { focus = ch.focus.newValue || null; renderFocus(); }
+      // Yeni kurulumda arka plan kipi (background.js) ilk sekme çizildikten sonra yazılabilir: gelince resmi göster.
+      if (area === 'local' && ch.bgMode) { loadPhoto(); renderBgPanel(); }
     });
   }
 })();
