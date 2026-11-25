@@ -291,7 +291,7 @@ bmFilter.addEventListener('keydown', (e) => {
     if (first && !$('sideSearch').hidden) {
       if (first.tagName === 'A') { trackClick(first.href); openUrl(first.href, newTab); }
       else first.click();
-    } else if (bmFilter.value.trim()) openUrl('https://www.google.com/search?q=' + encodeURIComponent(bmFilter.value.trim()), newTab);
+    } else if (bmFilter.value.trim()) webSearch(bmFilter.value.trim(), newTab);
   }
 });
 
@@ -407,18 +407,33 @@ function renderResults() {
     .sort((a, b) => b[1] - a[1]).slice(0, max).map((x) => x[0]);
   const tabs = rank(openTabs, 5);
   const bms = rank(allLinks, 40).map((l) => ({ kind: 'bm', ...l }));
-  results = [...tabs, ...bms];
+  // Listenin sonunda her zaman "web'de ara" satırı; eşleşme yoksa tek satır o olur ve Enter onu seçer.
+  results = [...tabs, ...bms, { kind: 'web', q: raw }];
   active = 0;
-  if (!results.length) {
-    resultsEl.replaceChildren(el('li', { class: 'r-empty', text: t('search.nothingFound', { q: raw }) }));
-  } else {
-    const rows = [];
-    let i = 0;
-    if (tabs.length) { rows.push(el('li', { class: 'r-head', text: t('search.openTabs') })); tabs.forEach((l) => rows.push(resultRow(l, i++, terms))); }
-    if (bms.length) { if (tabs.length) rows.push(el('li', { class: 'r-head', text: t('tab.bm') })); bms.forEach((l) => rows.push(resultRow(l, i++, terms))); }
-    resultsEl.replaceChildren(...rows);
-  }
+  const rows = [];
+  let i = 0;
+  if (tabs.length) { rows.push(el('li', { class: 'r-head', text: t('search.openTabs') })); tabs.forEach((l) => rows.push(resultRow(l, i++, terms))); }
+  if (bms.length) { if (tabs.length) rows.push(el('li', { class: 'r-head', text: t('tab.bm') })); bms.forEach((l) => rows.push(resultRow(l, i++, terms))); }
+  rows.push(webRow(raw, i));
+  resultsEl.replaceChildren(...rows);
   resultsEl.hidden = false;
+}
+const SEARCH_IC = '<svg class="fav r-web-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+function webRow(raw, i) {
+  const a = el('a', { href: '#' }, svg(SEARCH_IC),
+    el('div', { class: 'r-text' }, el('div', { class: 'r-title', text: t('search.web', { q: raw }) })));
+  a.addEventListener('click', (e) => { e.preventDefault(); webSearch(raw, e.ctrlKey || e.metaKey); });
+  a.addEventListener('auxclick', (e) => { if (e.button === 1) { e.preventDefault(); webSearch(raw, true); } });
+  const li = el('li', { role: 'option', class: 'r-web' + (i === active ? ' active' : '') }, a);
+  li.addEventListener('mousemove', () => setActive(i));
+  return li;
+}
+// Kullanıcının tarayıcıda seçtiği arama motoruyla arar (search izni; uyarı göstermez).
+// Firefox kullanıcı hareketi istediği için tuş/tıklama işleyicisinin içinde, beklemeden çağrılır.
+// Önizlemede (eklenti API'si yok) Google'a düşer.
+function webSearch(text, newTab) {
+  if (ext && ext.search && ext.search.query) ext.search.query({ text, disposition: newTab ? 'NEW_TAB' : 'CURRENT_TAB' });
+  else openUrl('https://www.google.com/search?q=' + encodeURIComponent(text), newTab);
 }
 function setActive(i) {
   const items = resultsEl.querySelectorAll('li[role=option]');
@@ -440,11 +455,10 @@ q.addEventListener('keydown', (e) => {
     e.preventDefault();
     const newTab = e.ctrlKey || e.metaKey;
     const r = results[active];
-    if (r && q.value.trim()) {
-      if (r.kind === 'tab' && !newTab) switchToTab(r);
-      else { trackClick(r.url); openUrl(r.url, newTab); }
-    }
-    else if (q.value.trim()) openUrl('https://www.google.com/search?q=' + encodeURIComponent(q.value.trim()), newTab);
+    if (!q.value.trim()) return;
+    if (!r || r.kind === 'web') webSearch(q.value.trim(), newTab);
+    else if (r.kind === 'tab' && !newTab) switchToTab(r);
+    else { trackClick(r.url); openUrl(r.url, newTab); }
   }
 });
 q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) resultsEl.hidden = true; }, 150));

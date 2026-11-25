@@ -29,7 +29,8 @@
     "topSites",
     "unlimitedStorage",
     "alarms",
-    "notifications"
+    "notifications",
+    "search"
   ],
   "host_permissions": [
     "https://api.open-meteo.com/*",

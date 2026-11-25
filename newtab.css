@@ -176,6 +176,8 @@ body.has-photo .hero > .quote, body.has-photo .focus { text-shadow: 0 2px 12px r
 .results .r-path { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .results .r-text { min-width: 0; flex: 1; }
 .results .r-empty { padding: 10px; color: var(--muted); }
+.results .r-web-ic { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.results li + li.r-web { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
 mark { background: transparent; color: var(--accent); font-weight: 600; }
 
 /* Günün odağı (Momentum tarzı) */
