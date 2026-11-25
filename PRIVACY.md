@@ -1,6 +1,6 @@
 # Kotilo New Tab — Privacy Policy
 
-_Last updated: 9 November 2026_
+_Last updated: 25 November 2026_
 
 This extension replaces your browser's new tab page. It has no account, no analytics, no advertising and no server of its own. The developer does not receive, collect, store or sell any of your data.
 
@@ -8,10 +8,12 @@ This extension replaces your browser's new tab page. It has no account, no analy
 
 Everything you enter stays in your browser's own extension storage:
 
-- Bookmarks are read from, and edited in, your browser's bookmarks; the extension keeps no copy of them.
+- Bookmarks are read from, and edited in, your browser's bookmarks; the extension keeps no copy of them. Sessions you save ("Save open tabs") are written as ordinary bookmarks under Other bookmarks › Kotilo sessions.
 - Settings, world clocks, to-dos, daily focus, market watchlists and news feed addresses are kept in browser sync storage. If you are signed in to your browser with sync turned on, your browser (Google for Chrome, Mozilla for Firefox) syncs this data between your own devices.
 - Notes, cached weather, cached prices and news, and click counts for frequently used bookmarks are kept in local storage on this device only.
 - Wallpapers (photos and videos) you add are kept in the browser's local database (IndexedDB) on this device only.
+- The interface language and zen mode are remembered on this device only.
+- Backups you export are saved as a file wherever you choose; the extension never uploads them. The Finnhub API key is left out of backups.
 
 Removing the extension deletes this data from the device.
 
@@ -24,6 +26,7 @@ To show its content, the extension's page contacts the following services direct
 | Open-Meteo (api.open-meteo.com, geocoding-api.open-meteo.com) | Weather card | Your approximate coordinates (only if you allow location access) or the city you type |
 | BigDataCloud (api.bigdatacloud.net) | Weather card, automatic location | Your approximate coordinates, to show the city name |
 | Nager.Date (date.nager.at) | Calendar | The country you selected for public holidays and the year |
+| Wikimedia (api.wikimedia.org, upload.wikimedia.org) | Background, "Picture of the day" mode (the default for new installs) | Nothing beyond the request for the public picture of the day and its image |
 | BrainyQuote (brainyquote.com) | Quote of the day | Nothing beyond the request for the public daily quote feed |
 | currency-api (cdn.jsdelivr.net, currency-api.pages.dev) | Markets card | Your selected base currency |
 | DuckDuckGo (icons.duckduckgo.com) | Firefox only, bookmark icons | The domain names of your bookmarks (Chrome uses its own local icon cache instead) |
@@ -40,6 +43,7 @@ Optional sources (Finnhub, TEFAS, RSS feeds) ask for your permission to contact 
 - **Storage, unlimited storage:** to save your settings, notes and wallpapers.
 - **Geolocation:** to show local weather, only if you allow it.
 - **Alarms, notifications:** for the Pomodoro timer.
+- **Search:** to send what you type in the search box to the search engine you chose in your browser, when you ask for a web search. The extension does not see or keep the results.
 - **Favicon (Chrome):** to show bookmark icons from the browser's local cache.
 
 ## Contact
