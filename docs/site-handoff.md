@@ -13,6 +13,10 @@ Kotilo New Tab (browser extension for Chrome and Firefox) is being published to 
    - Must be reachable without JavaScript and must not set tracking cookies (the policy says no tracking).
    - When this URL works, tell the extension maintainer so it can be entered in both store forms and in `store/listing.md`.
 
+1a. **Update the privacy page for version 3.2.0** (added 2026-11-25)
+   - Re-render `/newtab/privacy/` from the current `PRIVACY.md`. New in 3.2.0: the daily background photo is fetched from Wikimedia (`api.wikimedia.org`, `upload.wikimedia.org`); the new `search` permission (web search goes to the browser's default search engine); saved sessions are stored as ordinary bookmarks; backups are a JSON file the user downloads and imports. The "Last updated" date in `PRIVACY.md` is 25 November 2026.
+   - Also add Wikimedia to the "Data" row in the table below.
+
 ## Recommended
 
 2. **Product page at `https://kotilo.dev/newtab/`**
@@ -39,4 +43,4 @@ Kotilo New Tab (browser extension for Chrome and Firefox) is being published to 
 | Licence | MIT |
 | Firefox add-on ID | newtab@kotilo.dev |
 | Firefox listing | https://addons.mozilla.org/firefox/addon/kotilo-new-tab/ |
-| Data | Stays in the browser; no analytics. Contacts Open-Meteo, BigDataCloud, Nager.Date, BrainyQuote, currency-api; optional Finnhub (user's own key), TEFAS (opt-in), user-added RSS feeds |
+| Data | Stays in the browser; no analytics. Contacts Open-Meteo, BigDataCloud, Wikimedia (daily photo), Nager.Date, BrainyQuote, currency-api; optional Finnhub (user's own key), TEFAS (opt-in), user-added RSS feeds |
